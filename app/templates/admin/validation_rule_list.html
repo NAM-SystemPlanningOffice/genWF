@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}バリデーションルール一覧{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    .page-header h2 {
+        margin: 0;
+    }
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+    .rules-table {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    thead {
+        background-color: #f8f9fa;
+    }
+    th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: bold;
+        color: #2c3e50;
+        border-bottom: 2px solid #e0e0e0;
+    }
+    td {
+        padding: 1rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    .no-data {
+        padding: 3rem;
+        text-align: center;
+        color: #666;
+    }
+    .code {
+        font-family: monospace;
+        background-color: #f8f9fa;
+        padding: 0.25rem 0.5rem;
+        border-radius: 3px;
+    }
+    .btn-small {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        margin: 0 0.25rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        text-decoration: none;
+        color: white;
+    }
+    .btn-edit {
+        background-color: #3498db;
+    }
+    .btn-edit:hover {
+        background-color: #2980b9;
+    }
+    .btn-delete {
+        background-color: #e74c3c;
+    }
+    .btn-delete:hover {
+        background-color: #c0392b;
+    }
+</style>
+
+<div class="page-header">
+    <h2>バリデーションルール一覧</h2>
+    <a href="{{ url_for('admin.validation_rule_new') }}" class="btn btn-primary">+ 新規ルール作成</a>
+</div>
+
+{% if rules %}
+<div class="rules-table">
+    <table>
+        <thead>
+            <tr>
+                <th>ルールコード</th>
+                <th>ルール名</th>
+                <th>タイプ</th>
+                <th>エラーメッセージ</th>
+                <th>説明</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rule in rules %}
+            <tr>
+                <td><span class="code">{{ rule['rule_code'] }}</span></td>
+                <td>{{ rule['rule_name'] }}</td>
+                <td><span class="code">{{ rule['rule_type'] }}</span></td>
+                <td>{{ rule['error_message'] }}</td>
+                <td>{{ rule.get('description', '-') }}</td>
+                <td>
+                    <a href="{{ url_for('admin.validation_rule_edit', validation_rule_id=rule['validation_rule_id']) }}"
+                       class="btn-small btn-edit">編集</a>
+                    <form method="POST" action="{{ url_for('admin.validation_rule_delete', validation_rule_id=rule['validation_rule_id']) }}"
+                          style="display: inline;"
+                          onsubmit="return confirm('このバリデーションルールを削除しますか？\n※フィールドに割り当てられている場合は影響があります。')">
+                        <button type="submit" class="btn-small btn-delete">削除</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="rules-table">
+    <div class="no-data">
+        バリデーションルールが登録されていません
+    </div>
+</div>
+{% endif %}
+{% endblock %}

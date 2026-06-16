@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}申請種類選択 - ワークフロー申請システム{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    .page-header h2 {
+        margin: 0;
+        color: #2c3e50;
+    }
+    .user-info {
+        background-color: white;
+        padding: 1rem;
+        margin-bottom: 2rem;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .application-type-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+    .application-type-card {
+        background-color: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .application-type-card h3 {
+        margin-top: 0;
+        color: #2c3e50;
+    }
+    .application-type-card .description {
+        color: #666;
+        margin-bottom: 1rem;
+    }
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+    .btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+    }
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+    }
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+    .btn-secondary {
+        background-color: #95a5a6;
+        color: white;
+    }
+    .btn-secondary:hover {
+        background-color: #7f8c8d;
+    }
+    .btn-danger {
+        background-color: #e74c3c;
+        color: white;
+    }
+    .btn-danger:hover {
+        background-color: #c0392b;
+    }
+</style>
+
+<div class="page-header">
+    <h2>新規申請作成</h2>
+</div>
+
+<div class="user-info">
+    <strong>ログインユーザー:</strong> {{ session.user_name }} ({{ session.shozoku_name }})
+    | <a href="{{ url_for('auth.logout') }}">ログアウト</a>
+</div>
+
+<p>作成する申請の種類を選択してください。</p>
+
+<div class="application-type-grid">
+    {% for app_type in application_types %}
+    <div class="application-type-card">
+        <h3>{{ app_type.application_type_name }}</h3>
+        <p class="description">{{ app_type.description }}</p>
+
+        <div class="action-buttons">
+            {% if app_type.is_multi_record == 'Y' %}
+            <!-- 複数レコード入力の場合は1つのボタン -->
+            <a href="{{ url_for('application.modify', application_type_id=app_type.application_type_id) }}"
+               class="btn btn-primary">申請</a>
+            {% else %}
+            <!-- 単一レコードの場合 -->
+            {% if app_type.support_create == 'Y' %}
+            <a href="{{ url_for('application.create', application_type_id=app_type.application_type_id) }}"
+               class="btn btn-primary">新規作成</a>
+            {% endif %}
+
+            {% if app_type.support_modify == 'Y' or app_type.support_delete == 'Y' %}
+            <a href="{{ url_for('application.modify', application_type_id=app_type.application_type_id) }}"
+               class="btn btn-secondary">修正・廃止</a>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ app_type.application_type_name }} - リソース検索 - ワークフロー申請システム{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    .breadcrumb {
+        color: #666;
+        margin-bottom: 1rem;
+    }
+    .breadcrumb a {
+        color: #3498db;
+        text-decoration: none;
+    }
+    .search-container {
+        background-color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    .search-form {
+        display: flex;
+        gap: 1rem;
+        align-items: flex-end;
+    }
+    .form-group {
+        flex: 1;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: bold;
+    }
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+    }
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+    }
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+    .btn-secondary {
+        background-color: #95a5a6;
+        color: white;
+    }
+    .btn-secondary:hover {
+        background-color: #7f8c8d;
+    }
+    .results-container {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    thead {
+        background-color: #f8f9fa;
+    }
+    th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: bold;
+        border-bottom: 2px solid #e0e0e0;
+    }
+    td {
+        padding: 1rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    .no-results {
+        padding: 3rem;
+        text-align: center;
+        color: #666;
+    }
+    .select-link {
+        color: #3498db;
+        text-decoration: none;
+    }
+    .select-link:hover {
+        text-decoration: underline;
+    }
+</style>
+
+<div class="breadcrumb">
+    <a href="{{ url_for('application.index') }}">申請種類選択</a> &gt;
+    {{ app_type.application_type_name }} - リソース検索
+</div>
+
+<div class="page-header">
+    <h2>{{ app_type.application_type_name }} - {{ '修正' if action_type == 'modify' else '削除' }}対象の選択</h2>
+    {% if app_type.description %}
+    <p>{{ app_type.description }}</p>
+    {% endif %}
+</div>
+
+<div class="search-container">
+    <form method="GET" class="search-form">
+        <div class="form-group">
+            <label for="search_keyword">検索キーワード</label>
+            <input type="text" id="search_keyword" name="search_keyword"
+                   class="form-control"
+                   value="{{ search_keyword or '' }}"
+                   placeholder="検索キーワードを入力">
+        </div>
+        <button type="submit" class="btn btn-primary">検索</button>
+        <a href="{{ url_for('application.index') }}" class="btn btn-secondary">キャンセル</a>
+    </form>
+</div>
+
+{% if resources is defined %}
+<div class="results-container">
+    {% if resources %}
+    <table>
+        <thead>
+            <tr>
+                {% for key in resources[0].keys() if key != 'resource_id' %}
+                <th>{{ key }}</th>
+                {% endfor %}
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for resource in resources %}
+            <tr>
+                {% for key, value in resource.items() if key != 'resource_id' %}
+                <td>{{ value }}</td>
+                {% endfor %}
+                <td>
+                    {% if app_type.is_multi_record == 'Y' %}
+                    <!-- 複数レコード入力 -->
+                    <a href="{{ url_for('application_multi.multi_record',
+                               application_type_id=app_type.application_type_id,
+                               resource_id=resource.resource_id) }}"
+                       class="select-link">選択</a>
+                    {% elif action_type == 'modify' %}
+                    <!-- 単一レコード修正 -->
+                    <a href="{{ url_for('application.modify_with_resource',
+                               application_type_id=app_type.application_type_id,
+                               resource_id=resource.resource_id) }}"
+                       class="select-link">選択</a>
+                    {% else %}
+                    <!-- 単一レコード削除 -->
+                    <a href="{{ url_for('application.delete_with_resource',
+                               application_type_id=app_type.application_type_id,
+                               resource_id=resource.resource_id) }}"
+                       class="select-link">選択</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="no-results">
+        検索結果が見つかりませんでした
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}フィールド定義 - {{ application_type['application_type_name'] }}{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    .page-header h2 {
+        margin: 0;
+    }
+    .breadcrumb {
+        color: #666;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+    }
+    .breadcrumb a {
+        color: #3498db;
+        text-decoration: none;
+    }
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+    .fields-table {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    thead {
+        background-color: #f8f9fa;
+    }
+    th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: bold;
+        color: #2c3e50;
+        border-bottom: 2px solid #e0e0e0;
+    }
+    td {
+        padding: 1rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    tbody tr.inactive {
+        background-color: #f5f5f5;
+        color: #999;
+        opacity: 0.6;
+    }
+    tbody tr.inactive:hover {
+        background-color: #eeeeee;
+    }
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        margin: 0 0.125rem;
+    }
+    .badge-required {
+        background-color: #e74c3c;
+        color: white;
+    }
+    .badge-optional {
+        background-color: #95a5a6;
+        color: white;
+    }
+    .badge-inactive {
+        background-color: #95a5a6;
+        color: white;
+    }
+    .badge-active {
+        background-color: #27ae60;
+        color: white;
+    }
+    .btn-small {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        margin: 0 0.25rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        text-decoration: none;
+        color: white;
+    }
+    .btn-edit {
+        background-color: #3498db;
+    }
+    .btn-edit:hover {
+        background-color: #2980b9;
+    }
+    .btn-delete {
+        background-color: #e74c3c;
+    }
+    .btn-delete:hover {
+        background-color: #c0392b;
+    }
+    .no-data {
+        padding: 3rem;
+        text-align: center;
+        color: #666;
+    }
+    .info-box {
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        border-radius: 4px;
+        padding: 1rem;
+        margin-bottom: 2rem;
+        color: #0c5460;
+    }
+</style>
+
+<div class="breadcrumb">
+    <a href="{{ url_for('admin.application_type_list') }}">申請タイプ一覧</a> &gt;
+    フィールド定義
+</div>
+
+<div class="page-header">
+    <div>
+        <h2>フィールド定義 - {{ application_type['application_type_name'] }}</h2>
+    </div>
+    <a href="{{ url_for('admin.field_new', application_type_id=application_type['application_type_id']) }}"
+       class="btn btn-primary">+ フィールド追加</a>
+</div>
+
+{% if fields %}
+<div class="fields-table">
+    <table>
+        <thead>
+            <tr>
+                <th>状態</th>
+                <th>順序</th>
+                <th>フィールドコード</th>
+                <th>フィールド名</th>
+                <th>タイプ</th>
+                <th>必須（作成/修正/削除）</th>
+                <th>修正時編集可</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for field in fields %}
+            <tr {% if field.get('is_active') == 'N' %}class="inactive"{% endif %}>
+                <td>
+                    <span class="badge {% if field.get('is_active') == 'N' %}badge-inactive{% else %}badge-active{% endif %}">
+                        {% if field.get('is_active') == 'N' %}削除済{% else %}有効{% endif %}
+                    </span>
+                </td>
+                <td>{{ field.get('display_order', '-') }}</td>
+                <td>{{ field['field_code'] }}</td>
+                <td>{{ field['field_name'] }}</td>
+                <td>{{ field['field_type'] }}</td>
+                <td>
+                    <span class="badge {% if field['is_required_create'] == 'Y' %}badge-required{% else %}badge-optional{% endif %}">
+                        {% if field['is_required_create'] == 'Y' %}○{% else %}-{% endif %}
+                    </span>
+                    <span class="badge {% if field['is_required_modify'] == 'Y' %}badge-required{% else %}badge-optional{% endif %}">
+                        {% if field['is_required_modify'] == 'Y' %}○{% else %}-{% endif %}
+                    </span>
+                    <span class="badge {% if field['is_required_delete'] == 'Y' %}badge-required{% else %}badge-optional{% endif %}">
+                        {% if field['is_required_delete'] == 'Y' %}○{% else %}-{% endif %}
+                    </span>
+                </td>
+                <td>{{ '○' if field['is_editable_modify'] == 'Y' else '-' }}</td>
+                <td>
+                    {% if field.get('is_active') == 'N' %}
+                    <span style="color: #999;">削除済</span>
+                    {% else %}
+                    <a href="{{ url_for('admin.field_edit', field_id=field['field_id']) }}"
+                       class="btn-small btn-edit">編集</a>
+                    <form method="POST" action="{{ url_for('admin.field_delete', field_id=field['field_id']) }}"
+                          style="display: inline;"
+                          onsubmit="return confirm('このフィールドを削除しますか？\n※関連するバリデーション設定も削除されます。')">
+                        <button type="submit" class="btn-small btn-delete">削除</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="fields-table">
+    <div class="no-data">
+        フィールドが登録されていません
+    </div>
+</div>
+{% endif %}
+
+<div style="margin-top: 2rem;">
+    <a href="{{ url_for('admin.application_type_list') }}" class="btn btn-primary">申請タイプ一覧に戻る</a>
+</div>
+{% endblock %}

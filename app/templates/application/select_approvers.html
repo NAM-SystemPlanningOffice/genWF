@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block title %}承認者選択 - ワークフロー申請システム{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    .page-header h2 {
+        margin: 0 0 0.5rem 0;
+        color: #2c3e50;
+    }
+    .breadcrumb {
+        color: #666;
+        margin-bottom: 1rem;
+    }
+    .breadcrumb a {
+        color: #3498db;
+        text-decoration: none;
+    }
+    .info-section {
+        background-color: #e7f3ff;
+        border-left: 4px solid #3498db;
+        padding: 1rem;
+        margin-bottom: 2rem;
+        border-radius: 4px;
+    }
+    .approver-section {
+        background-color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 1.5rem;
+    }
+    .approver-section h3 {
+        margin-top: 0;
+        color: #2c3e50;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 0.5rem;
+    }
+    .approver-list {
+        margin-top: 1rem;
+    }
+    .approver-item {
+        padding: 0.75rem;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        margin-bottom: 0.5rem;
+        background-color: #f8f9fa;
+    }
+    .approver-item label {
+        display: flex;
+        align-items: center;
+        margin: 0;
+        cursor: pointer;
+    }
+    .approver-item input[type="checkbox"] {
+        margin-right: 0.75rem;
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 1rem;
+    }
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+    }
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+    .btn-secondary {
+        background-color: #95a5a6;
+        color: white;
+    }
+    .btn-secondary:hover {
+        background-color: #7f8c8d;
+    }
+    .button-group {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+    .help-text {
+        font-size: 0.9rem;
+        color: #666;
+        margin-top: 1rem;
+    }
+</style>
+
+<div class="breadcrumb">
+    <a href="{{ url_for('application.list') }}">申請一覧</a> &gt;
+    承認者選択
+</div>
+
+<div class="page-header">
+    <h2>承認者選択</h2>
+</div>
+
+<div class="info-section">
+    <strong>申請タイトル:</strong> {{ application_title }}<br>
+    <strong>申請種類:</strong> {{ application_type_name }}<br>
+    下記の承認者候補から、通知を送る承認者を選択してください。<br>
+    選択された承認者にのみメール通知が送信されます（未選択の承認者も承認は可能です）。
+</div>
+
+<form method="POST" action="{{ url_for('application.confirm_approvers') }}">
+    <input type="hidden" name="application_id" value="{{ application_id }}">
+    {% if applicant_dept_approvers %}
+    <div class="approver-section">
+        <h3>申請者所属長承認</h3>
+        <div class="approver-list">
+            {% for approver in applicant_dept_approvers %}
+            <div class="approver-item">
+                <label>
+                    <input type="checkbox" name="applicant_dept_approvers" value="{{ approver['user_id'] }}" checked>
+                    {{ approver['user_id'] }} - {{ approver.get('user_name', '') }}
+                </label>
+            </div>
+            {% endfor %}
+        </div>
+        <p class="help-text">※ 申請者所属の承認者候補です。通知を送る承認者を選択してください。</p>
+    </div>
+    {% endif %}
+
+    {% if jurisdiction_dept_approvers %}
+    <div class="approver-section">
+        <h3>所管所属長承認</h3>
+        <div class="approver-list">
+            {% for approver in jurisdiction_dept_approvers %}
+            <div class="approver-item">
+                <label>
+                    <input type="checkbox" name="jurisdiction_dept_approvers" value="{{ approver['user_id'] }}" checked>
+                    {{ approver['user_id'] }} - {{ approver.get('user_name', '') }}
+                </label>
+            </div>
+            {% endfor %}
+        </div>
+        <p class="help-text">※ リソース所管所属の承認者候補です。通知を送る承認者を選択してください。</p>
+    </div>
+    {% endif %}
+
+    <div class="button-group">
+        <button type="submit" class="btn btn-primary">この内容で申請を提出する</button>
+        <a href="{{ url_for('application.list') }}" class="btn btn-secondary">キャンセル</a>
+    </div>
+</form>
+{% endblock %}

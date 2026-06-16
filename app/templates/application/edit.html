@@ -1,0 +1,566 @@
+{% extends "base.html" %}
+
+{% block title %}申請編集 - {{ application_type['application_type_name'] }}{% endblock %}
+
+{% block content %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        background-color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    .form-group label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+    }
+    .form-group input[type="text"],
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+        box-sizing: border-box;
+    }
+    .form-group textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+    .form-group .help-text {
+        font-size: 0.875rem;
+        color: #666;
+        margin-top: 0.25rem;
+    }
+    .required {
+        color: #e74c3c;
+        margin-left: 0.25rem;
+    }
+    .button-group {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+    .btn {
+        padding: 0.75rem 2rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 1rem;
+    }
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+    }
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+    .btn-success {
+        background-color: #27ae60;
+        color: white;
+    }
+    .btn-success:hover {
+        background-color: #229954;
+    }
+    .btn-secondary {
+        background-color: #95a5a6;
+        color: white;
+    }
+    .btn-secondary:hover {
+        background-color: #7f8c8d;
+    }
+    .breadcrumb {
+        margin-bottom: 1rem;
+        color: #666;
+    }
+    .breadcrumb a {
+        color: #3498db;
+        text-decoration: none;
+    }
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+    .error-message {
+        color: #e74c3c;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+        display: none;
+    }
+    .form-control.error {
+        border-color: #e74c3c;
+    }
+</style>
+
+<div class="breadcrumb">
+    <a href="{{ url_for('application.list') }}">申請一覧</a> &gt;
+    申請編集
+</div>
+
+<div class="form-container">
+    <h2>{{ application_type['application_type_name'] }} - 編集</h2>
+    <p>申請ID: {{ application['application_id'] }}</p>
+
+    <form method="POST" action="{{ url_for('application.submit_edit', application_id=application['application_id']) }}">
+        <!-- 申請タイトル -->
+        <div class="form-group">
+            <label for="application_title">
+                申請タイトル
+                <span class="required">*</span>
+            </label>
+            <input type="text" id="application_title" name="application_title"
+                   value="{{ application['application_title'] }}" required>
+        </div>
+
+        <!-- 申請フィールド -->
+        {% for field in fields %}
+        {% set is_readonly = (action_type == 'modify' and field['is_editable_modify'] == 'N') %}
+        <div class="form-group">
+            <label for="field_{{ field['field_id'] }}" {% if field['field_type'] == 'checkbox' %}style="display:none;"{% endif %}>
+                {{ field['field_name'] }}
+                {% if field['is_required'] == 'Y' %}<span class="required">*</span>{% endif %}
+            </label>
+
+            {% if field['field_type'] == 'text' %}
+                <input type="text"
+                       id="field_{{ field['field_id'] }}"
+                       name="field_{{ field['field_id'] }}"
+                       value="{{ field_values.get(field['field_code'], '') }}"
+                       placeholder="{{ field['placeholder'] or '' }}"
+                       {% if field['is_required_modify'] == 'Y' %}required{% endif %}
+                       {% if is_readonly %}readonly{% endif %}>
+
+            {% elif field['field_type'] == 'textarea' %}
+                <textarea id="field_{{ field['field_id'] }}"
+                          name="field_{{ field['field_id'] }}"
+                          placeholder="{{ field['placeholder'] or '' }}"
+                          {% if field['is_required_modify'] == 'Y' %}required{% endif %}
+                          {% if is_readonly %}readonly{% endif %}>{{ field_values.get(field['field_code'], '') }}</textarea>
+
+            {% elif field['field_type'] == 'number' %}
+                <input type="number"
+                       id="field_{{ field['field_id'] }}"
+                       name="field_{{ field['field_id'] }}"
+                       value="{{ field_values.get(field['field_code'], '') }}"
+                       {% if field['is_required_modify'] == 'Y' %}required{% endif %}
+                       {% if field['is_editable_modify'] == 'N' %}readonly{% endif %}>
+
+            {% elif field['field_type'] == 'date' %}
+                <input type="date"
+                       id="field_{{ field['field_id'] }}"
+                       name="field_{{ field['field_id'] }}"
+                       value="{{ field_values.get(field['field_code'], '') }}"
+                       {% if field['is_required_modify'] == 'Y' %}required{% endif %}
+                       {% if field['is_editable_modify'] == 'N' %}readonly{% endif %}>
+
+            {% elif field['field_type'] == 'select' %}
+                <select id="field_{{ field['field_id'] }}"
+                        name="field_{{ field['field_id'] }}"
+                        {% if field['is_required_modify'] == 'Y' %}required{% endif %}
+                        {% if is_readonly %}disabled{% endif %}>
+                    <option value="">選択してください</option>
+                    {% if field.options %}
+                    {% for option in field.options %}
+                    <option value="{{ option.option_value }}"
+                            {% if option.option_value == field_values.get(field['field_code'], '') %}selected{% endif %}>
+                        {{ option.option_label }}
+                    </option>
+                    {% endfor %}
+                    {% endif %}
+                </select>
+
+            {% elif field['field_type'] == 'datalist' %}
+                <input type="text"
+                       id="field_{{ field['field_id'] }}"
+                       name="field_{{ field['field_id'] }}"
+                       list="datalist_{{ field['field_id'] }}"
+                       value="{{ field_values.get(field['field_code'], '') }}"
+                       {% if field['placeholder'] %}placeholder="{{ field['placeholder'] }}"{% endif %}
+                       {% if field['is_required_modify'] == 'Y' %}required{% endif %}
+                       {% if field['is_editable_modify'] == 'N' %}readonly{% endif %}>
+                <datalist id="datalist_{{ field['field_id'] }}">
+                    {% if field.options %}
+                    {% for option in field.options %}
+                    <option value="{{ option.option_value }}">{{ option.option_label }}</option>
+                    {% endfor %}
+                    {% endif %}
+                </datalist>
+
+            {% elif field['field_type'] == 'checkbox' %}
+                <div style="padding: 0.5rem 0;">
+                    <label style="display: inline-flex; align-items: center; font-weight: normal; cursor: pointer;">
+                        <input type="checkbox"
+                               id="field_{{ field['field_id'] }}"
+                               name="field_{{ field['field_id'] }}"
+                               value="Y"
+                               {% if field_values.get(field['field_code'], '') == 'Y' %}checked{% endif %}
+                               {% if is_readonly %}disabled{% endif %}
+                               style="width: auto; margin-right: 0.5rem;">
+                        {{ field['field_name'] }}
+                        {% if field['is_required_modify'] == 'Y' %}
+                        <span class="required">*</span>
+                        {% endif %}
+                    </label>
+                    {% if field['help_text'] %}
+                    <span class="help-text" style="display: block; margin-left: 1.5rem;">{{ field['help_text'] | format_help_text }}</span>
+                    {% endif %}
+                </div>
+                {% if is_readonly %}
+                <input type="hidden" name="field_{{ field['field_id'] }}" value="{{ field_values.get(field['field_code'], 'N') }}">
+                {% endif %}
+
+            {% else %}
+                <input type="text"
+                       id="field_{{ field['field_id'] }}"
+                       name="field_{{ field['field_id'] }}"
+                       value="{{ field_values.get(field['field_code'], '') }}"
+                       {% if field['is_required_modify'] == 'Y' %}required{% endif %}
+                       {% if field['is_editable_modify'] == 'N' %}readonly{% endif %}>
+            {% endif %}
+
+            {% if field['help_text'] %}
+            <div class="help-text">{{ field['help_text'] | format_help_text }}</div>
+            {% endif %}
+            <span class="error-message" id="error_field_{{ field['field_id'] }}"></span>
+
+            <!-- バリデーションルールをdata属性に埋め込み -->
+            {% if field.validations %}
+            <script>
+                window.fieldValidations = window.fieldValidations || {};
+                window.fieldValidations['field_{{ field['field_id'] }}'] = {{ field.validations | tojson }};
+            </script>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <!-- 備考 -->
+        <div class="form-group">
+            <label for="remarks">備考</label>
+            <textarea id="remarks" name="remarks">{{ application['remarks'] or '' }}</textarea>
+        </div>
+
+        <!-- ボタン -->
+        <div class="button-group">
+            <button type="submit" name="action" value="save_draft" class="btn btn-primary">
+                下書き保存
+            </button>
+            <button type="submit" name="action" value="submit" class="btn btn-success"
+                    onclick="return confirm('この申請を提出しますか？')">
+                提出する
+            </button>
+            <a href="{{ url_for('application.list') }}" class="btn btn-secondary">
+                キャンセル
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+// select/datalist の label を hidden field にセット
+function saveLabelFields() {
+    // select要素の処理
+    document.querySelectorAll('select[id^="field_"]').forEach(select => {
+        const fieldId = select.id.replace('field_', '');
+        const selectedOption = select.options[select.selectedIndex];
+        if (selectedOption && selectedOption.value) {
+            const label = selectedOption.textContent.trim();
+
+            // 既存のhidden fieldを削除
+            const existingHidden = document.getElementById('field_' + fieldId + '_label');
+            if (existingHidden) {
+                existingHidden.remove();
+            }
+
+            // 新しいhidden fieldを追加
+            const hiddenField = document.createElement('input');
+            hiddenField.type = 'hidden';
+            hiddenField.id = 'field_' + fieldId + '_label';
+            hiddenField.name = 'field_' + fieldId + '_label';
+            hiddenField.value = label;
+            select.parentNode.appendChild(hiddenField);
+        }
+    });
+
+    // datalist要素の処理
+    document.querySelectorAll('input[list^="datalist_"]').forEach(input => {
+        const fieldId = input.id.replace('field_', '');
+        const datalistId = input.getAttribute('list');
+        const datalist = document.getElementById(datalistId);
+
+        if (datalist && input.value) {
+            // datalistから一致するoptionを探す
+            const matchingOption = Array.from(datalist.options).find(
+                option => option.value === input.value
+            );
+
+            let label = input.value; // デフォルトは入力値そのまま
+            if (matchingOption) {
+                // option要素のtextContentをlabelとして使用
+                label = matchingOption.textContent.trim() || matchingOption.label || input.value;
+            }
+
+            // 既存のhidden fieldを削除
+            const existingHidden = document.getElementById('field_' + fieldId + '_label');
+            if (existingHidden) {
+                existingHidden.remove();
+            }
+
+            // 新しいhidden fieldを追加
+            const hiddenField = document.createElement('input');
+            hiddenField.type = 'hidden';
+            hiddenField.id = 'field_' + fieldId + '_label';
+            hiddenField.name = 'field_' + fieldId + '_label';
+            hiddenField.value = label;
+            input.parentNode.appendChild(hiddenField);
+        }
+    });
+}
+
+// フォーム送信時にlabelを保存、checkboxの値を処理、バリデーション実行
+document.querySelector('form').addEventListener('submit', function(e) {
+    const action = e.submitter.value;
+    const submitButton = e.submitter;
+
+    // labelをhidden fieldに保存
+    saveLabelFields();
+
+    // チェックボックスの値を処理（チェックされていない場合は'N'を送信）
+    document.querySelectorAll('input[type="checkbox"][id^="field_"]').forEach(checkbox => {
+        if (!checkbox.disabled && !checkbox.checked) {
+            // チェックされていない場合、hidden fieldでNを送信
+            const hiddenField = document.createElement('input');
+            hiddenField.type = 'hidden';
+            hiddenField.name = checkbox.name;
+            hiddenField.value = 'N';
+            checkbox.parentNode.appendChild(hiddenField);
+        }
+    });
+
+    // 下書き保存の場合はバリデーションをスキップ
+    if (action === 'save_draft') {
+        // 連打防止: ボタンを無効化
+        disableSubmitButtons(submitButton);
+        return true;
+    }
+
+    let hasError = false;
+
+    // すべてのエラーメッセージをクリア
+    document.querySelectorAll('.error-message').forEach(el => {
+        el.style.display = 'none';
+        el.textContent = '';
+    });
+    document.querySelectorAll('.form-control').forEach(el => {
+        el.classList.remove('error');
+    });
+
+    // 各フィールドをバリデーション
+    if (window.fieldValidations) {
+        for (const fieldKey in window.fieldValidations) {
+            const field = document.getElementById(fieldKey);
+            const validations = window.fieldValidations[fieldKey];
+            let value = '';
+
+            if (field) {
+                if (field.type === 'checkbox') {
+                    value = field.checked ? 'Y' : 'N';
+                } else {
+                    value = field.value;
+                }
+            }
+
+            for (const validation of validations) {
+                let isValid;
+
+                if (validation.rule_type === 'cross_field') {
+                    // クロスフィールドバリデーション
+                    isValid = validateCrossField(value, validation.rule_parameter);
+                } else {
+                    // 通常のバリデーション
+                    isValid = validateRule(validation.rule_type, value, validation.rule_parameter);
+                }
+
+                if (!isValid) {
+                    const errorEl = document.getElementById('error_' + fieldKey);
+                    if (errorEl) {
+                        errorEl.textContent = validation.error_message;
+                        errorEl.style.display = 'block';
+                    }
+                    if (field) {
+                        field.classList.add('error');
+                    }
+                    hasError = true;
+                    break; // 最初のエラーで停止
+                }
+            }
+        }
+    }
+
+    if (hasError) {
+        e.preventDefault();
+        alert('入力内容に誤りがあります。エラーメッセージを確認してください。');
+        return false;
+    }
+
+    // 連打防止: バリデーション成功時のみボタンを無効化
+    disableSubmitButtons(submitButton);
+    return true;
+});
+
+// 連打防止: 送信ボタンを無効化する関数
+function disableSubmitButtons(clickedButton) {
+    // クリックされたボタンを無効化
+    clickedButton.disabled = true;
+    clickedButton.style.opacity = '0.6';
+    clickedButton.style.cursor = 'not-allowed';
+
+    // ボタンのテキストを保存して「処理中...」に変更
+    const originalText = clickedButton.textContent;
+    clickedButton.setAttribute('data-original-text', originalText);
+    clickedButton.textContent = '処理中...';
+
+    // 他の送信ボタンも無効化（二重送信防止）
+    const allButtons = document.querySelectorAll('button[type="submit"]');
+    allButtons.forEach(btn => {
+        if (btn !== clickedButton) {
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+        }
+    });
+}
+
+// クロスフィールドバリデーションの実行
+function validateCrossField(value, parameter) {
+    try {
+        const params = JSON.parse(parameter);
+        const condition = params.condition;
+        const requiredFields = params.fields || [];
+
+        if (!condition) {
+            return true;
+        }
+
+        // 必要なフィールドの値を取得
+        const fieldValues = { value: value || '' };
+        requiredFields.forEach(fieldId => {
+            const input = document.getElementById('field_' + fieldId);
+            if (input) {
+                if (input.type === 'checkbox') {
+                    fieldValues['field_' + fieldId] = input.checked ? 'Y' : 'N';
+                } else {
+                    fieldValues['field_' + fieldId] = input.value || '';
+                }
+            } else {
+                fieldValues['field_' + fieldId] = '';
+            }
+        });
+
+        // 条件式を評価用のJavaScriptに変換
+        let evalCondition = condition;
+
+        // フィールド参照を置換
+        Object.keys(fieldValues).forEach(key => {
+            const val = fieldValues[key];
+            const quotedVal = typeof val === 'string' ? `"${val}"` : val;
+            evalCondition = evalCondition.replace(new RegExp(`\\b${key}\\b`, 'g'), quotedVal);
+        });
+
+        // Python演算子をJavaScriptに変換
+        evalCondition = evalCondition.replace(/ and /g, ' && ').replace(/ or /g, ' || ');
+
+        // 条件式を評価
+        const result = eval(evalCondition);
+        return result === true;
+
+    } catch (e) {
+        console.error('クロスフィールドバリデーションエラー:', e);
+        return true; // エラー時はサーバーサイドに任せる
+    }
+}
+
+// バリデーションルールの実行
+function validateRule(ruleType, value, parameter) {
+    // 値が空の場合（requiredルール以外はスキップ）
+    if ((value === null || value === '') && ruleType !== 'required') {
+        return true;
+    }
+
+    switch (ruleType) {
+        case 'required':
+            return value !== null && value.trim() !== '';
+
+        case 'minlength':
+            return value.length >= parseInt(parameter);
+
+        case 'maxlength':
+            return value.length <= parseInt(parameter);
+
+        case 'pattern':
+            const regex = new RegExp(parameter);
+            return regex.test(value);
+
+        case 'starts_with':
+            return value.startsWith(parameter);
+
+        case 'ends_with':
+            return value.endsWith(parameter);
+
+        case 'contains':
+            return value.includes(parameter);
+
+        case 'equals':
+            return value === parameter;
+
+        case 'email':
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            return emailRegex.test(value);
+
+        case 'numeric':
+            return !isNaN(value) && value.trim() !== '';
+
+        case 'min_value':
+            return parseFloat(value) >= parseFloat(parameter);
+
+        case 'max_value':
+            return parseFloat(value) <= parseFloat(parameter);
+
+        case 'date_format':
+            // 簡易的な日付チェック（YYYY-MM-DD形式のみ）
+            if (parameter === 'YYYY-MM-DD') {
+                return /^\d{4}-\d{2}-\d{2}$/.test(value);
+            }
+            return true;
+
+        case 'future_date':
+            const inputDate = new Date(value);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return inputDate >= today;
+
+        case 'past_date':
+            const inputDate2 = new Date(value);
+            const today2 = new Date();
+            today2.setHours(0, 0, 0, 0);
+            return inputDate2 <= today2;
+
+        // データベース系のルールはクライアントサイドでは検証不可（サーバーサイドのみ）
+        case 'exists_in_table':
+        case 'unique_in_table':
+        case 'custom_query':
+            return true;
+
+        default:
+            return true;
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ app_type.application_type_name }} - リソース選択 - ワークフロー申請システム{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    .page-header h2 {
+        margin: 0 0 0.5rem 0;
+        color: #2c3e50;
+    }
+    .breadcrumb {
+        color: #666;
+        margin-bottom: 1rem;
+    }
+    .breadcrumb a {
+        color: #3498db;
+        text-decoration: none;
+    }
+    .search-box {
+        background-color: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 1.5rem;
+    }
+    .search-box input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+        box-sizing: border-box;
+    }
+    .resources-table {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    thead {
+        background-color: #f8f9fa;
+    }
+    th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: bold;
+        color: #2c3e50;
+        border-bottom: 2px solid #e0e0e0;
+    }
+    td {
+        padding: 1rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    .btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 0.875rem;
+    }
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+    }
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+    .btn-danger {
+        background-color: #e74c3c;
+        color: white;
+    }
+    .btn-danger:hover {
+        background-color: #c0392b;
+    }
+    .no-resources {
+        padding: 3rem;
+        text-align: center;
+        color: #666;
+    }
+    .info-box {
+        background-color: #e8f4f8;
+        border-left: 4px solid #3498db;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+</style>
+
+<div class="breadcrumb">
+    <a href="{{ url_for('application.index') }}">申請種類選択</a> &gt;
+    {{ app_type.application_type_name }} -
+    {% if action_type == 'modify' %}修正{% elif action_type == 'delete' %}削除{% endif %}
+</div>
+
+<div class="page-header">
+    <h2>{{ app_type.application_type_name }} -
+        {% if action_type == 'modify' %}修正{% elif action_type == 'delete' %}削除{% endif %}対象選択
+    </h2>
+    {% if app_type.description %}
+    <p>{{ app_type.description }}</p>
+    {% endif %}
+</div>
+
+<div class="info-box">
+    {% if action_type == 'modify' %}
+    修正する既存の設定を選択してください。
+    {% elif action_type == 'delete' %}
+    削除する既存の設定を選択してください。
+    {% endif %}
+</div>
+
+<div class="search-box">
+    <input type="text" id="search-input" placeholder="検索キーワードを入力...">
+</div>
+
+{% if resources %}
+<div class="resources-table">
+    <table id="resources-table">
+        <thead>
+            <tr>
+                <th>リソース</th>
+                <th>所管所属</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for resource in resources %}
+            <tr>
+                <td>{{ resource.display_label or resource.resource_id }}</td>
+                <td>{{ resource.jurisdiction_shozoku or '-' }}</td>
+                <td>
+                    {% if action_type == 'modify' %}
+                    <a href="{{ url_for('application.modify_with_resource',
+                                        application_type_id=app_type.application_type_id,
+                                        resource_id=resource.resource_id) }}"
+                       class="btn btn-primary">修正申請</a>
+                    {% elif action_type == 'delete' %}
+                    <a href="{{ url_for('application.delete_with_resource',
+                                        application_type_id=app_type.application_type_id,
+                                        resource_id=resource.resource_id) }}"
+                       class="btn btn-danger">削除申請</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="resources-table">
+    <div class="no-resources">
+        <p>リソースが見つかりませんでした。</p>
+    </div>
+</div>
+{% endif %}
+
+<script>
+// 簡易検索機能
+document.getElementById('search-input').addEventListener('input', function(e) {
+    const keyword = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('#resources-table tbody tr');
+
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(keyword)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

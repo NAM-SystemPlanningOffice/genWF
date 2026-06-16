@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block title %}バリデーションルール{{ '編集' if mode == 'edit' else '作成' }}{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    .breadcrumb {
+        color: #666;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+    }
+    .breadcrumb a {
+        color: #3498db;
+        text-decoration: none;
+    }
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+    .form-container {
+        background-color: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    .form-group label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+    }
+    .form-group input[type="text"],
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+    .form-group textarea {
+        min-height: 100px;
+        resize: vertical;
+        font-family: monospace;
+    }
+    .checkbox-group {
+        display: flex;
+        gap: 1.5rem;
+        margin-top: 0.5rem;
+    }
+    .checkbox-group label {
+        font-weight: normal;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .form-section {
+        margin-bottom: 2rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    .form-section:last-child {
+        border-bottom: none;
+    }
+    .form-section h3 {
+        color: #3498db;
+        margin-top: 0;
+    }
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+    }
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+    }
+    .btn-secondary {
+        background-color: #95a5a6;
+        color: white;
+    }
+    .btn-secondary:hover {
+        background-color: #7f8c8d;
+    }
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+    }
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+    .help-text {
+        font-size: 0.875rem;
+        color: #666;
+        margin-top: 0.25rem;
+    }
+    .info-box {
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        border-radius: 4px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        color: #0c5460;
+    }
+    .rule-type-examples {
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 1rem;
+        margin-top: 0.5rem;
+    }
+    .rule-type-examples h4 {
+        margin-top: 0;
+        font-size: 0.875rem;
+    }
+    .rule-type-examples pre {
+        margin: 0.5rem 0 0 0;
+        padding: 0.5rem;
+        background-color: white;
+        border-radius: 3px;
+        font-size: 0.8rem;
+        overflow-x: auto;
+    }
+</style>
+
+<div class="breadcrumb">
+    <a href="{{ url_for('admin.validation_rule_list') }}">バリデーションルール一覧</a> &gt;
+    ルール{{ '編集' if mode == 'edit' else '作成' }}
+</div>
+
+<div class="page-header">
+    <h2>バリデーションルール{{ '編集' if mode == 'edit' else '作成' }}</h2>
+</div>
+
+<div class="form-container">
+    <form method="POST" action="{{ url_for('admin.validation_rule_save') }}">
+        {% if rule %}
+        <input type="hidden" name="validation_rule_id" value="{{ rule['validation_rule_id'] }}">
+        {% endif %}
+
+        <div class="form-section">
+            <h3>基本情報</h3>
+
+            <div class="form-group">
+                <label for="rule_code">ルールコード *</label>
+                <input type="text" id="rule_code" name="rule_code" required
+                       value="{{ rule['rule_code'] if rule else '' }}"
+                       {% if mode == 'edit' %}readonly{% endif %}>
+                <div class="help-text">一意の識別コード（例: USER_CODE_PATTERN）</div>
+            </div>
+
+            <div class="form-group">
+                <label for="rule_name">ルール名 *</label>
+                <input type="text" id="rule_name" name="rule_name" required
+                       value="{{ rule['rule_name'] if rule else '' }}">
+                <div class="help-text">表示用の名前（例: ユーザーコード形式）</div>
+            </div>
+
+            <div class="form-group">
+                <label for="rule_type">ルールタイプ *</label>
+                <select id="rule_type" name="rule_type" required onchange="showRuleTypeHelp()">
+                    <option value="">-- 選択してください --</option>
+                    <option value="required" {% if rule and rule.get('rule_type') == 'required' %}selected{% endif %}>required - 必須入力</option>
+                    <option value="minlength" {% if rule and rule.get('rule_type') == 'minlength' %}selected{% endif %}>minlength - 最小文字数</option>
+                    <option value="maxlength" {% if rule and rule.get('rule_type') == 'maxlength' %}selected{% endif %}>maxlength - 最大文字数</option>
+                    <option value="pattern" {% if rule and rule.get('rule_type') == 'pattern' %}selected{% endif %}>pattern - 正規表現パターン</option>
+                    <option value="starts_with" {% if rule and rule.get('rule_type') == 'starts_with' %}selected{% endif %}>starts_with - 前方一致</option>
+                    <option value="ends_with" {% if rule and rule.get('rule_type') == 'ends_with' %}selected{% endif %}>ends_with - 後方一致</option>
+                    <option value="contains" {% if rule and rule.get('rule_type') == 'contains' %}selected{% endif %}>contains - 部分一致</option>
+                    <option value="equals" {% if rule and rule.get('rule_type') == 'equals' %}selected{% endif %}>equals - 完全一致</option>
+                    <option value="email" {% if rule and rule.get('rule_type') == 'email' %}selected{% endif %}>email - メールアドレス形式</option>
+                    <option value="numeric" {% if rule and rule.get('rule_type') == 'numeric' %}selected{% endif %}>numeric - 数値のみ</option>
+                    <option value="min_value" {% if rule and rule.get('rule_type') == 'min_value' %}selected{% endif %}>min_value - 最小値</option>
+                    <option value="max_value" {% if rule and rule.get('rule_type') == 'max_value' %}selected{% endif %}>max_value - 最大値</option>
+                    <option value="date_format" {% if rule and rule.get('rule_type') == 'date_format' %}selected{% endif %}>date_format - 日付形式</option>
+                    <option value="future_date" {% if rule and rule.get('rule_type') == 'future_date' %}selected{% endif %}>future_date - 未来日付のみ</option>
+                    <option value="past_date" {% if rule and rule.get('rule_type') == 'past_date' %}selected{% endif %}>past_date - 過去日付のみ</option>
+                    <option value="exists_in_table" {% if rule and rule.get('rule_type') == 'exists_in_table' %}selected{% endif %}>exists_in_table - テーブル内に存在</option>
+                    <option value="unique_in_table" {% if rule and rule.get('rule_type') == 'unique_in_table' %}selected{% endif %}>unique_in_table - テーブル内で一意</option>
+                    <option value="custom_query" {% if rule and rule.get('rule_type') == 'custom_query' %}selected{% endif %}>custom_query - カスタムSQLクエリ</option>
+                    <option value="cross_field" {% if rule and rule.get('rule_type') == 'cross_field' %}selected{% endif %}>cross_field - クロスフィールドバリデーション</option>
+                </select>
+
+                <div id="rule-type-help" class="rule-type-examples" style="display: none;">
+                    <h4>パラメータ例:</h4>
+                    <pre id="rule-type-example"></pre>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="rule_parameter">ルールパラメータ</label>
+                <textarea id="rule_parameter" name="rule_parameter">{{ rule['rule_parameter'] if rule else '' }}</textarea>
+                <div class="help-text">単一パラメータは文字列、複数キーが必要な場合のみJSON形式で入力</div>
+            </div>
+
+            <div class="form-group">
+                <label for="error_message">エラーメッセージ *</label>
+                <input type="text" id="error_message" name="error_message" required
+                       value="{{ rule['error_message'] if rule else '' }}">
+                <div class="help-text">バリデーションエラー時に表示するメッセージ</div>
+            </div>
+
+            <div class="form-group">
+                <label for="description">説明</label>
+                <textarea id="description" name="description" style="min-height: 60px;">{{ rule['description'] if rule else '' }}</textarea>
+                <div class="help-text">このルールの用途や説明</div>
+            </div>
+
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" name="is_active" value="Y"
+                           {% if not rule or rule.get('is_active') == 'Y' %}checked{% endif %}>
+                    有効
+                </label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ url_for('admin.validation_rule_list') }}" class="btn btn-secondary">キャンセル</a>
+            <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+    </form>
+</div>
+
+<script>
+const ruleTypeExamples = {
+    'required': 'パラメータ不要',
+    'minlength': '5',
+    'maxlength': '100',
+    'pattern': '^[A-Z][0-9]{5}$',
+    'starts_with': 'USER_',
+    'ends_with': '@example.com',
+    'contains': 'test',
+    'equals': 'APPROVED',
+    'email': 'パラメータ不要',
+    'numeric': 'パラメータ不要',
+    'min_value': '0',
+    'max_value': '999999',
+    'date_format': 'YYYY-MM-DD',
+    'future_date': 'パラメータ不要',
+    'past_date': 'パラメータ不要',
+    'exists_in_table': '{"table": "M_DEPARTMENT", "column": "dept_cd", "condition": "is_active=\'Y\'"}',
+    'unique_in_table': '{"table": "nam_user_admin.gmail_group_setting", "column": "name", "key_column": "email"}',
+    'custom_query': '{"query": "SELECT COUNT(*) FROM ...", "expect": "0", "message": "既に存在します"}',
+    'cross_field': '{"condition": "value == \'Y\' or ((field_1001 == \'Y\' or field_1002 == \'Y\') and field_1003 == \'Y\')", "fields": [1001, 1002, 1003]}'
+};
+
+function showRuleTypeHelp() {
+    const ruleType = document.getElementById('rule_type').value;
+    const helpDiv = document.getElementById('rule-type-help');
+    const examplePre = document.getElementById('rule-type-example');
+
+    if (ruleType && ruleTypeExamples[ruleType]) {
+        examplePre.textContent = ruleTypeExamples[ruleType];
+        helpDiv.style.display = 'block';
+    } else {
+        helpDiv.style.display = 'none';
+    }
+}
+
+// 初期表示時にヘルプを表示
+document.addEventListener('DOMContentLoaded', function() {
+    showRuleTypeHelp();
+});
+</script>
+{% endblock %}

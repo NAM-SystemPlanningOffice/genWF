@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}申請一覧{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    .page-header h2 {
+        margin: 0;
+    }
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+    .tasks-table {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    thead {
+        background-color: #f8f9fa;
+    }
+    th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: bold;
+        color: #2c3e50;
+        border-bottom: 2px solid #e0e0e0;
+    }
+    td {
+        padding: 1rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.875rem;
+        font-weight: bold;
+    }
+    .status-draft {
+        background-color: #95a5a6;
+        color: white;
+    }
+    .status-submitted {
+        background-color: #3498db;
+        color: white;
+    }
+    .status-pending_approval {
+        background-color: #f39c12;
+        color: white;
+    }
+    .status-approved_by_me {
+        background-color: #1abc9c;
+        color: white;
+    }
+    .status-approved {
+        background-color: #27ae60;
+        color: white;
+    }
+    .status-rejected {
+        background-color: #e74c3c;
+        color: white;
+    }
+    .status-withdrawn {
+        background-color: #95a5a6;
+        color: white;
+    }
+    .action-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        background-color: #ecf0f1;
+        color: #2c3e50;
+    }
+    .role-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        margin-left: 0.5rem;
+    }
+    .role-applicant {
+        background-color: #3498db;
+        color: white;
+    }
+    .role-approver {
+        background-color: #f39c12;
+        color: white;
+    }
+    .no-tasks {
+        padding: 3rem;
+        text-align: center;
+        color: #666;
+    }
+    .task-link {
+        color: #3498db;
+        text-decoration: none;
+    }
+    .task-link:hover {
+        text-decoration: underline;
+    }
+    .btn-small {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        margin: 0 0.25rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        text-decoration: none;
+        color: white;
+    }
+    .btn-approve {
+        background-color: #27ae60;
+    }
+    .btn-approve:hover {
+        background-color: #229954;
+    }
+    .btn-edit {
+        background-color: #3498db;
+    }
+    .btn-edit:hover {
+        background-color: #2980b9;
+    }
+    .btn-delete {
+        background-color: #e74c3c;
+    }
+    .btn-delete:hover {
+        background-color: #c0392b;
+    }
+    .btn-recall {
+        background-color: #f39c12;
+    }
+    .btn-recall:hover {
+        background-color: #e67e22;
+    }
+    .status-completed_by_peer {
+        background-color: #bdc3c7;
+        color: #2c3e50;
+    }
+    .pending-indicator {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        background-color: #e74c3c;
+        border-radius: 50%;
+        margin-left: 0.5rem;
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+</style>
+
+<div class="page-header">
+    <h2>申請一覧</h2>
+    <a href="{{ url_for('application.index') }}" class="btn btn-primary">新規申請作成</a>
+</div>
+
+{% if tasks %}
+<div class="tasks-table">
+    <table>
+        <thead>
+            <tr>
+                <th>申請ID</th>
+                <th>申請種類</th>
+                <th>申請タイトル</th>
+                <th>区分</th>
+                <th>ステータス</th>
+                <th>役割</th>
+                <th>申請日時</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr>
+                <td>
+                    <a href="{{ url_for('application.detail', application_id=task['application_id']) }}"
+                       class="task-link">
+                        {{ task['application_id'] }}
+                    </a>
+                    {% if task.get('pending_task_count', 0) > 0 %}
+                    <span class="pending-indicator" title="承認待ち"></span>
+                    {% endif %}
+                </td>
+                <td>{{ task['application_type_name'] }}</td>
+                <td>
+                    <a href="{{ url_for('application.detail', application_id=task['application_id']) }}"
+                       class="task-link">
+                        {{ task['application_title'] }}
+                    </a>
+                </td>
+                <td>
+                    <span class="action-badge">
+                        {% if task['action_type'] == 'create' %}新規
+                        {% elif task['action_type'] == 'modify' %}修正
+                        {% elif task['action_type'] == 'delete' %}削除
+                        {% else %}{{ task['action_type'] }}{% endif %}
+                    </span>
+                </td>
+                <td>
+                    <span class="status-badge status-{{ task['user_status'] }}">
+                        {% if task['user_status'] == 'draft' %}下書き
+                        {% elif task['user_status'] == 'submitted' %}申請済
+                        {% elif task['user_status'] == 'pending_approval' %}承認待ち
+                        {% elif task['user_status'] == 'approved_by_me' %}承認済
+                        {% elif task['user_status'] == 'completed_by_peer' %}承認済（他者）
+                        {% elif task['user_status'] == 'approved' %}承認完了
+                        {% elif task['user_status'] == 'rejected' %}却下
+                        {% elif task['user_status'] == 'withdrawn' %}取り下げ
+                        {% else %}{{ task['user_status'] }}{% endif %}
+                    </span>
+                </td>
+                <td>
+                    {% if task['applicant_user_id'] == session.get('user_id') %}
+                    <span class="role-badge role-applicant">申請者</span>
+                    {% endif %}
+                    {% if task.get('pending_task_count', 0) > 0 or task['user_role'] == 'approver' %}
+                    <span class="role-badge role-approver">承認者</span>
+                    {% endif %}
+                </td>
+                <td>{{ task['created_at'].strftime('%Y-%m-%d %H:%M') if task['created_at'] else '-' }}</td>
+                <td>
+                    {% if 'approve' in task['actions'] %}
+                        <a href="{{ url_for('approval.approve_task', node_instance_id=0) }}?application_id={{ task['application_id'] }}"
+                           class="btn-small btn-approve">承認処理</a>
+                    {% endif %}
+                    {% if 'recall' in task['actions'] %}
+                        <a href="{{ url_for('application.detail', application_id=task['application_id']) }}"
+                           class="btn-small btn-recall">引き戻し</a>
+                    {% endif %}
+                    {% if 'edit' in task['actions'] %}
+                        <a href="{{ url_for('application.edit', application_id=task['application_id']) }}"
+                           class="btn-small btn-edit">編集</a>
+                    {% endif %}
+                    {% if 'delete' in task['actions'] %}
+                        <a href="{{ url_for('application.delete_draft', application_id=task['application_id']) }}"
+                           class="btn-small btn-delete"
+                           onclick="return confirm('この下書きを削除しますか？')">削除</a>
+                    {% endif %}
+                    {% if not task['actions'] %}
+                        -
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="tasks-table">
+    <div class="no-tasks">
+        申請がありません
+    </div>
+</div>
+{% endif %}
+{% endblock %}

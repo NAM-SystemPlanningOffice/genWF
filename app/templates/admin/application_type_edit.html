@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}申請タイプ{{ '編集' if mode == 'edit' else '作成' }}{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    .form-container {
+        background-color: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    .form-group label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+    }
+    .form-group input[type="text"],
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+    .form-group textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+    .checkbox-group {
+        display: flex;
+        gap: 1.5rem;
+        margin-top: 0.5rem;
+    }
+    .checkbox-group label {
+        font-weight: normal;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .form-section {
+        margin-bottom: 2rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    .form-section:last-child {
+        border-bottom: none;
+    }
+    .form-section h3 {
+        color: #3498db;
+        margin-top: 0;
+    }
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+    }
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+    }
+    .btn-secondary {
+        background-color: #95a5a6;
+        color: white;
+    }
+    .btn-secondary:hover {
+        background-color: #7f8c8d;
+    }
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+    }
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+    .help-text {
+        font-size: 0.875rem;
+        color: #666;
+        margin-top: 0.25rem;
+    }
+</style>
+
+<div class="page-header">
+    <h2>申請タイプ{{ '編集' if mode == 'edit' else '作成' }}</h2>
+</div>
+
+<div class="form-container">
+    <form method="POST" action="{{ url_for('admin.application_type_save') }}">
+        {% if application_type %}
+        <input type="hidden" name="application_type_id" value="{{ application_type['application_type_id'] }}">
+        {% endif %}
+
+        <div class="form-section">
+            <h3>基本情報</h3>
+
+            <div class="form-group">
+                <label for="application_type_code">申請タイプコード *</label>
+                <input type="text" id="application_type_code" name="application_type_code" required
+                       value="{{ application_type['application_type_code'] if application_type else '' }}"
+                       {% if mode == 'edit' %}readonly{% endif %}>
+                <div class="help-text">一意の識別コード（例: ACC001）</div>
+            </div>
+
+            <div class="form-group">
+                <label for="application_type_name">申請タイプ名 *</label>
+                <input type="text" id="application_type_name" name="application_type_name" required
+                       value="{{ application_type['application_type_name'] if application_type else '' }}">
+                <div class="help-text">表示用の名前（例: アカウント管理）</div>
+            </div>
+
+            <div class="form-group">
+                <label for="description">説明</label>
+                <textarea id="description" name="description">{{ application_type['description'] if application_type else '' }}</textarea>
+            </div>
+
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" name="is_under_development" value="Y"
+                           {% if application_type and application_type.get('is_under_development') == 'Y' %}checked{% endif %}>
+                    開発中（一般ユーザーには非表示）
+                </label>
+            </div>
+            <div class="help-text">開発中の申請種類は管理者のみ表示され、一般ユーザーは申請を提出できません</div>
+        </div>
+
+        <div class="form-section">
+            <h3>対応する操作（アクションタイプ）</h3>
+
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" name="is_multi_record" value="Y"
+                           {% if application_type and application_type.get('is_multi_record') == 'Y' %}checked{% endif %}>
+                    複数レコード入力
+                </label>
+            </div>
+            <div class="help-text">複数レコード入力の場合、1回の申請で複数の追加・修正・削除を行います（例: メンバー管理）</div>
+
+            <div class="form-group" style="margin-top: 1rem;">
+                <label for="record_add_mode">レコード追加モード（複数レコード入力時のみ有効）</label>
+                <select id="record_add_mode" name="record_add_mode">
+                    <option value="select" {% if not application_type or application_type.get('record_add_mode') == 'select' %}selected{% endif %}>候補選択（既存候補から選んで追加）</option>
+                    <option value="free" {% if application_type and application_type.get('record_add_mode') == 'free' %}selected{% endif %}>自由入力（完全に新規入力）</option>
+                </select>
+                <div class="help-text">
+                    ・候補選択: is_member='N'のレコードから選択して追加（例: メンバー管理、権限付与）<br>
+                    ・自由入力: 空のフォームを追加して自由に入力（例: 経費明細、契約条項）
+                </div>
+            </div>
+
+            <div class="checkbox-group" style="margin-top: 1rem;">
+                <label>
+                    <input type="checkbox" name="support_create" value="Y"
+                           {% if not application_type or application_type.get('support_create') == 'Y' %}checked{% endif %}>
+                    新規作成 (create)
+                </label>
+                <label>
+                    <input type="checkbox" name="support_modify" value="Y"
+                           {% if application_type and application_type.get('support_modify') == 'Y' %}checked{% endif %}>
+                    修正 (modify)
+                </label>
+                <label>
+                    <input type="checkbox" name="support_delete" value="Y"
+                           {% if application_type and application_type.get('support_delete') == 'Y' %}checked{% endif %}>
+                    削除 (delete)
+                </label>
+            </div>
+            <div class="help-text">単一レコードの場合、各アクションタイプごとに個別の申請を行います</div>
+        </div>
+
+        <div class="form-section">
+            <h3>申請対象設定</h3>
+
+            <div class="form-group">
+                <label for="jurisdiction_restriction">申請可能制限</label>
+                <select id="jurisdiction_restriction" name="jurisdiction_restriction">
+                    <option value="any" {% if not application_type or application_type.get('jurisdiction_restriction') == 'any' %}selected{% endif %}>任意</option>
+                    <option value="specific" {% if application_type and application_type.get('jurisdiction_restriction') == 'specific' %}selected{% endif %}>特定所属のみ</option>
+                    <option value="specific_user" {% if application_type and application_type.get('jurisdiction_restriction') == 'specific_user' %}selected{% endif %}>特定ユーザーのみ</option>
+                </select>
+                <div class="help-text">
+                    ・任意: すべてのユーザーが申請可能<br>
+                    ・特定所属のみ: 下記で指定した所属コードのみ申請可能<br>
+                    ・特定ユーザーのみ: 下記で指定したユーザーIDのみ申請可能<br>
+                    ※所管所属による制限は「親リソース検索クエリ」で :applicant_shozoku パラメータを使用して実現してください
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="allowed_shozoku_list">申請可能所属リスト（特定所属のみの場合）</label>
+                <input type="text" id="allowed_shozoku_list" name="allowed_shozoku_list"
+                       value="{{ application_type['allowed_shozoku_list'] if application_type else '' }}"
+                       placeholder="例: 1234567,2345678,3456789">
+                <div class="help-text">カンマ区切りで所属コードを指定（申請可能制限='特定所属のみ'の場合のみ有効）</div>
+            </div>
+
+            <div class="form-group">
+                <label for="allowed_user_list">申請可能ユーザーリスト（特定ユーザーのみの場合）</label>
+                <input type="text" id="allowed_user_list" name="allowed_user_list"
+                       value="{{ application_type['allowed_user_list'] if application_type else '' }}"
+                       placeholder="例: user001,user002,admin01">
+                <div class="help-text">カンマ区切りでユーザーIDを指定（申請可能制限='特定ユーザーのみ'の場合のみ有効）</div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>リソース設定（修正・削除時の既存データ参照）</h3>
+
+            <div class="form-group">
+                <label for="resource_search_query">親リソース検索クエリ</label>
+                <textarea id="resource_search_query" name="resource_search_query">{{ application_type['resource_search_query'] if application_type else '' }}</textarea>
+                <div class="help-text">
+                    第1カラムは必ずresource_idとしてエイリアス指定。<br>
+                    パラメータ: :search_keyword（検索キーワード）, :applicant_user_id（申請者ユーザーCD）, :applicant_shozoku（申請者所属）<br>
+                    例: WHERE owner_shozoku = :applicant_shozoku（所属で制限）/ WHERE owner_user_id = :applicant_user_id（本人のみ）
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="resource_detail_query">親リソース詳細クエリ</label>
+                <textarea id="resource_detail_query" name="resource_detail_query">{{ application_type['resource_detail_query'] if application_type else '' }}</textarea>
+                <div class="help-text">パラメータ: :resource_id で詳細取得。例: SELECT * FROM ... WHERE user_cd = :resource_id</div>
+            </div>
+
+            <div class="form-group">
+                <label for="resource_member_query">子レコード一覧クエリ（複数レコード入力用）</label>
+                <textarea id="resource_member_query" name="resource_member_query">{{ application_type['resource_member_query'] if application_type else '' }}</textarea>
+                <div class="help-text">
+                    パラメータ: :resource_id（親リソースID）, :applicant_user_id（申請者ユーザーCD）, :applicant_shozoku（申請者所属）<br>
+                    必須カラム: is_member='Y'(既存メンバー)/'N'(追加可能), is_updatable='Y'(更新可能)/'N'(更新不可)<br>
+                    例: WHERE user_id != :applicant_user_id（申請者自身を除外）
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="resource_validation_query">検証クエリ（任意）</label>
+                <textarea id="resource_validation_query" name="resource_validation_query">{{ application_type['resource_validation_query'] if application_type else '' }}</textarea>
+                <div class="help-text">リソースの有効性確認。0行返却でエラー。</div>
+            </div>
+
+            <div class="form-group">
+                <label for="resource_jurisdiction_column">所管カラム名</label>
+                <input type="text" id="resource_jurisdiction_column" name="resource_jurisdiction_column"
+                       value="{{ application_type['resource_jurisdiction_column'] if application_type else '' }}">
+                <div class="help-text">所管所属を示すカラム名（例: department_cd）</div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>ワークフロー設定</h3>
+
+            <div class="form-group">
+                <label for="workflow_definition_id">ワークフロー定義ID *</label>
+                <select id="workflow_definition_id" name="workflow_definition_id" required>
+                    <option value="">-- 選択してください --</option>
+                    {% for workflow in workflows %}
+                    <option value="{{ workflow['workflow_definition_id'] }}"
+                            {% if application_type and application_type.get('workflow_definition_id') == workflow['workflow_definition_id'] %}selected{% endif %}>
+                        {{ workflow['workflow_name'] }} (v{{ workflow['version'] }})
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="help-text">すべてのアクションタイプ（作成・修正・削除）で共通（必須）</div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>その他</h3>
+
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" name="is_active" value="Y"
+                           {% if not application_type or application_type.get('is_active') == 'Y' %}checked{% endif %}>
+                    有効
+                </label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ url_for('admin.application_type_list') }}" class="btn btn-secondary">キャンセル</a>
+            <div>
+                <button type="submit" name="next_step" value="list" class="btn btn-secondary">保存</button>
+                <button type="submit" name="next_step" value="fields" class="btn btn-primary">保存してフィールド設定へ →</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

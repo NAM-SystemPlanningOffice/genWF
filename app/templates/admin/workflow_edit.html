@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}ワークフロー定義{{ '編集' if mode == 'edit' else '作成' }}{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    .form-container {
+        background-color: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    .form-group label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group textarea {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+    .form-group textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+    .checkbox-group {
+        display: flex;
+        gap: 1.5rem;
+        margin-top: 0.5rem;
+    }
+    .checkbox-group label {
+        font-weight: normal;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+    }
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+    }
+    .btn-secondary {
+        background-color: #95a5a6;
+        color: white;
+    }
+    .btn-secondary:hover {
+        background-color: #7f8c8d;
+    }
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+    }
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+    .help-text {
+        font-size: 0.875rem;
+        color: #666;
+        margin-top: 0.25rem;
+    }
+</style>
+
+<div class="page-header">
+    <h2>ワークフロー定義{{ '編集' if mode == 'edit' else '作成' }}</h2>
+</div>
+
+<div class="form-container">
+    <form method="POST" action="{{ url_for('admin.workflow_save') }}">
+        {% if workflow %}
+        <input type="hidden" name="workflow_definition_id" value="{{ workflow['workflow_definition_id'] }}">
+        {% endif %}
+
+        <div class="form-group">
+            <label for="workflow_code">ワークフローコード *</label>
+            <input type="text" id="workflow_code" name="workflow_code" required
+                   value="{{ workflow['workflow_code'] if workflow else '' }}"
+                   {% if mode == 'edit' %}readonly{% endif %}>
+            <div class="help-text">一意の識別コード（例: WF001）</div>
+        </div>
+
+        <div class="form-group">
+            <label for="workflow_name">ワークフロー名 *</label>
+            <input type="text" id="workflow_name" name="workflow_name" required
+                   value="{{ workflow['workflow_name'] if workflow else '' }}">
+            <div class="help-text">表示用の名前（例: 標準承認フロー）</div>
+        </div>
+
+        <div class="form-group">
+            <label for="description">説明</label>
+            <textarea id="description" name="description">{{ workflow['description'] if workflow else '' }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="version">バージョン</label>
+            <input type="number" id="version" name="version" min="1"
+                   value="{{ workflow['version'] if workflow else 1 }}">
+            <div class="help-text">ワークフロー定義のバージョン番号</div>
+        </div>
+
+        <div class="checkbox-group">
+            <label>
+                <input type="checkbox" name="is_active" value="Y"
+                       {% if not workflow or workflow.get('is_active') == 'Y' %}checked{% endif %}>
+                有効
+            </label>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ url_for('admin.workflow_list') }}" class="btn btn-secondary">キャンセル</a>
+            <div>
+                <button type="submit" name="next_step" value="list" class="btn btn-secondary">保存</button>
+                <button type="submit" name="next_step" value="nodes" class="btn btn-primary">保存してノード設定へ →</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

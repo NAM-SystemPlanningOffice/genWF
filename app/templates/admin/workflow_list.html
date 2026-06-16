@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}ワークフロー定義一覧{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+    .workflow-table {
+        width: 100%;
+        background-color: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .workflow-table table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .workflow-table th {
+        background-color: #34495e;
+        color: white;
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+    }
+    .workflow-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #ecf0f1;
+    }
+    .workflow-table tr:hover {
+        background-color: #f8f9fa;
+    }
+    .workflow-table tr:last-child td {
+        border-bottom: none;
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    .status-active {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .status-inactive {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+    .btn-sm {
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 0.875rem;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-info {
+        background-color: #17a2b8;
+        color: white;
+    }
+    .btn-info:hover {
+        background-color: #138496;
+    }
+    .btn-warning {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    .btn-warning:hover {
+        background-color: #e0a800;
+    }
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+    .btn-danger:hover {
+        background-color: #c82333;
+    }
+</style>
+
+<div class="page-header">
+    <h2>ワークフロー定義一覧</h2>
+    <a href="{{ url_for('admin.workflow_new') }}" class="btn-primary">+ 新規作成</a>
+</div>
+
+<div class="workflow-table">
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>ワークフローコード</th>
+                <th>ワークフロー名</th>
+                <th>バージョン</th>
+                <th>説明</th>
+                <th>状態</th>
+                <th>更新日時</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if workflows %}
+                {% for workflow in workflows %}
+                <tr>
+                    <td>{{ workflow['workflow_definition_id'] }}</td>
+                    <td><strong>{{ workflow['workflow_code'] }}</strong></td>
+                    <td>{{ workflow['workflow_name'] }}</td>
+                    <td>v{{ workflow['version'] }}</td>
+                    <td>{{ workflow['description'][:50] if workflow['description'] else '-' }}</td>
+                    <td>
+                        {% if workflow['is_active'] == 'Y' %}
+                        <span class="status-badge status-active">有効</span>
+                        {% else %}
+                        <span class="status-badge status-inactive">無効</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ workflow['updated_at'].strftime('%Y-%m-%d %H:%M') if workflow['updated_at'] else '-' }}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <a href="{{ url_for('admin.workflow_detail', workflow_definition_id=workflow['workflow_definition_id']) }}"
+                               class="btn-sm btn-info">ノード</a>
+                            <a href="{{ url_for('admin.workflow_edit', workflow_definition_id=workflow['workflow_definition_id']) }}"
+                               class="btn-sm btn-warning">編集</a>
+                            <form method="POST"
+                                  action="{{ url_for('admin.workflow_delete', workflow_definition_id=workflow['workflow_definition_id']) }}"
+                                  style="display: inline;"
+                                  onsubmit="return confirm('本当に削除しますか？');">
+                                <button type="submit" class="btn-sm btn-danger">削除</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 2rem; color: #7f8c8d;">
+                        登録されているワークフロー定義はありません
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<div style="margin-top: 2rem;">
+    <a href="{{ url_for('admin.index') }}" class="btn-sm btn-info">← 管理画面トップに戻る</a>
+</div>
+{% endblock %}

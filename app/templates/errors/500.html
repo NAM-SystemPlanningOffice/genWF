@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}500 Internal Server Error{% endblock %}
+
+{% block content %}
+<style>
+    .error-container {
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+    .error-container h1 {
+        font-size: 6rem;
+        margin: 0;
+        color: #e74c3c;
+    }
+    .error-container h2 {
+        color: #2c3e50;
+    }
+</style>
+
+<div class="error-container">
+    <h1>500</h1>
+    <h2>サーバーエラー</h2>
+    <p>申し訳ございません。サーバーでエラーが発生しました。</p>
+    <p>しばらくしてから再度お試しください。</p>
+    <p><a href="{{ url_for('application.index') }}">トップページに戻る</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}選択肢管理 - {{ group['group_name'] }}{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    .page-header h2 {
+        margin: 0;
+    }
+    .breadcrumb {
+        color: #666;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+    }
+    .breadcrumb a {
+        color: #3498db;
+        text-decoration: none;
+    }
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+    .options-table {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    thead {
+        background-color: #f8f9fa;
+    }
+    th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: bold;
+        color: #2c3e50;
+        border-bottom: 2px solid #e0e0e0;
+    }
+    td {
+        padding: 1rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+    }
+    .badge-active {
+        background-color: #27ae60;
+        color: white;
+    }
+    .badge-inactive {
+        background-color: #95a5a6;
+        color: white;
+    }
+    .btn-small {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        margin: 0 0.25rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        text-decoration: none;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-delete {
+        background-color: #e74c3c;
+    }
+    .btn-delete:hover {
+        background-color: #c0392b;
+    }
+    .no-data {
+        padding: 3rem;
+        text-align: center;
+        color: #666;
+    }
+    .add-option-form {
+        background-color: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    .add-option-form h3 {
+        margin-top: 0;
+        color: #3498db;
+    }
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 2fr 1fr 1fr auto;
+        gap: 1rem;
+        align-items: end;
+        margin-bottom: 1rem;
+    }
+    .form-group {
+        margin-bottom: 0;
+    }
+    .form-group label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+        font-size: 0.875rem;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="number"] {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+    .form-group input[type="checkbox"] {
+        width: auto;
+    }
+</style>
+
+<div class="breadcrumb">
+    <a href="{{ url_for('admin.pulldown_group_list') }}">プルダウングループ一覧</a> &gt;
+    選択肢管理
+</div>
+
+<div class="page-header">
+    <div>
+        <h2>選択肢管理 - {{ group['group_name'] }}</h2>
+    </div>
+</div>
+
+<div class="add-option-form">
+    <h3>新規選択肢追加</h3>
+    <form method="POST" action="{{ url_for('admin.pulldown_option_save') }}">
+        <input type="hidden" name="pulldown_group_id" value="{{ group['pulldown_group_id'] }}">
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="option_value">値 *</label>
+                <input type="text" id="option_value" name="option_value" required>
+            </div>
+            <div class="form-group">
+                <label for="option_label">ラベル *</label>
+                <input type="text" id="option_label" name="option_label" required>
+            </div>
+            <div class="form-group">
+                <label for="display_order">表示順序</label>
+                <input type="number" id="display_order" name="display_order">
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" name="is_active" value="Y" checked>
+                    有効
+                </label>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">追加</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% if options %}
+<div class="options-table">
+    <table>
+        <thead>
+            <tr>
+                <th>順序</th>
+                <th>値</th>
+                <th>ラベル</th>
+                <th>状態</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for option in options %}
+            <tr>
+                <td>{{ option.get('display_order', '-') }}</td>
+                <td>{{ option['option_value'] }}</td>
+                <td>{{ option['option_label'] }}</td>
+                <td>
+                    {% if option['is_active'] == 'Y' %}
+                    <span class="badge badge-active">有効</span>
+                    {% else %}
+                    <span class="badge badge-inactive">無効</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <form method="POST" action="{{ url_for('admin.pulldown_option_delete', option_id=option['option_id']) }}"
+                          style="display: inline;"
+                          onsubmit="return confirm('この選択肢を削除しますか？')">
+                        <button type="submit" class="btn-small btn-delete">削除</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="options-table">
+    <div class="no-data">
+        選択肢が登録されていません
+    </div>
+</div>
+{% endif %}
+
+<div style="margin-top: 2rem;">
+    <a href="{{ url_for('admin.pulldown_group_list') }}" class="btn btn-primary">プルダウングループ一覧に戻る</a>
+</div>
+{% endblock %}

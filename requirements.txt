@@ -1,0 +1,38 @@
+# Flask本体
+Flask==3.0.0
+Werkzeug==3.0.1
+
+# Oracle Database接続（Python 3.13対応）
+oracledb==3.3.0
+
+# 環境変数管理
+python-dotenv==1.0.0
+
+# セッション管理
+Flask-Session==0.5.0
+
+# フォーム処理
+WTForms==3.1.1
+
+# 日時処理
+python-dateutil==2.8.2
+
+# 本番用WSGIサーバー（Azure App Service Linux対応）
+gunicorn==21.2.0
+
+# テスト
+pytest==7.4.3
+pytest-cov==4.1.0
+
+# BOX API（自動処理機能で使用）
+box-sdk-gen==1.5.0
+
+# Google Workspace API（自動処理機能で使用）
+google-api-python-client==2.108.0
+google-auth==2.25.2
+google-auth-oauthlib==1.2.0
+google-auth-httplib2==0.2.0
+
+# 開発用
+black==23.12.1
+flake8==6.1.0

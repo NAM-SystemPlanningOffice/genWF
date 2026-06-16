@@ -1,0 +1,422 @@
+{% extends 'base.html' %}
+
+{% block title %}申請詳細 - ワークフロー申請システム{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    .page-header h2 {
+        margin: 0 0 0.5rem 0;
+        color: #2c3e50;
+    }
+    .breadcrumb {
+        color: #666;
+        margin-bottom: 1rem;
+    }
+    .breadcrumb a {
+        color: #3498db;
+        text-decoration: none;
+    }
+    .detail-section {
+        background-color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 1.5rem;
+    }
+    .detail-section h3 {
+        margin-top: 0;
+        color: #2c3e50;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 0.5rem;
+    }
+    .info-row {
+        display: flex;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    .info-label {
+        font-weight: bold;
+        color: #555;
+        width: 400px;
+        flex-shrink: 0;
+        margin-right: 2rem;
+    }
+    .info-value {
+        color: #333;
+        flex: 1;
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.875rem;
+        font-weight: bold;
+    }
+    .status-draft {
+        background-color: #95a5a6;
+        color: white;
+    }
+    .status-submitted {
+        background-color: #3498db;
+        color: white;
+    }
+    .status-approved {
+        background-color: #27ae60;
+        color: white;
+    }
+    .status-rejected {
+        background-color: #e74c3c;
+        color: white;
+    }
+    .action-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        background-color: #ecf0f1;
+        color: #2c3e50;
+    }
+    .workflow-timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+    .workflow-node {
+        position: relative;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-left: 3px solid #e0e0e0;
+    }
+    .workflow-node::before {
+        content: '';
+        position: absolute;
+        left: -8px;
+        top: 1.5rem;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #e0e0e0;
+    }
+    .workflow-node.pending {
+        border-left-color: #3498db;
+    }
+    .workflow-node.pending::before {
+        background-color: #3498db;
+    }
+    .workflow-node.approved {
+        border-left-color: #27ae60;
+    }
+    .workflow-node.approved::before {
+        background-color: #27ae60;
+    }
+    .workflow-node.rejected {
+        border-left-color: #e74c3c;
+    }
+    .workflow-node.rejected::before {
+        background-color: #e74c3c;
+    }
+    .workflow-node.returned {
+        border-left-color: #f39c12;
+    }
+    .workflow-node.returned::before {
+        background-color: #f39c12;
+    }
+    .workflow-node.skipped {
+        border-left-color: #95a5a6;
+        opacity: 0.6;
+    }
+    .workflow-node.skipped::before {
+        background-color: #95a5a6;
+    }
+    .node-title {
+        font-weight: bold;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+    .node-info {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    .btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+    }
+    .btn-secondary {
+        background-color: #95a5a6;
+        color: white;
+    }
+    .btn-secondary:hover {
+        background-color: #7f8c8d;
+    }
+    .btn-small {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.875rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+    }
+    .btn-recall {
+        background-color: #3498db;
+        color: white;
+    }
+    .btn-recall:hover {
+        background-color: #2980b9;
+    }
+</style>
+
+<div class="breadcrumb">
+    <a href="{{ url_for('application.list') }}">申請一覧</a> &gt;
+    申請詳細
+</div>
+
+<div class="page-header">
+    <h2>申請詳細</h2>
+</div>
+
+<!-- 申請基本情報 -->
+<div class="detail-section">
+    <h3>申請情報</h3>
+
+    <div class="info-row">
+        <div class="info-label">申請ID</div>
+        <div class="info-value">{{ application['application_id'] }}</div>
+    </div>
+
+    <div class="info-row">
+        <div class="info-label">申請種類</div>
+        <div class="info-value">{{ application['application_type_name'] }}</div>
+    </div>
+
+    <div class="info-row">
+        <div class="info-label">申請タイトル</div>
+        <div class="info-value">{{ application['application_title'] }}</div>
+    </div>
+
+    <div class="info-row">
+        <div class="info-label">申請区分</div>
+        <div class="info-value">
+            <span class="action-badge">
+                {% if application['action_type'] == 'create' %}新規
+                {% elif application['action_type'] == 'modify' %}修正
+                {% elif application['action_type'] == 'delete' %}削除
+                {% else %}{{ application['action_type'] }}{% endif %}
+            </span>
+        </div>
+    </div>
+
+    <div class="info-row">
+        <div class="info-label">ステータス</div>
+        <div class="info-value">
+            <span class="status-badge status-{{ application['application_status'] }}">
+                {% if application['application_status'] == 'draft' %}下書き
+                {% elif application['application_status'] == 'submitted' %}承認待ち
+                {% elif application['application_status'] == 'approved' %}承認済み
+                {% elif application['application_status'] == 'rejected' %}却下
+                {% elif application['application_status'] == 'withdrawn' %}取り下げ
+                {% else %}{{ application['application_status'] }}{% endif %}
+            </span>
+        </div>
+    </div>
+
+    <div class="info-row">
+        <div class="info-label">申請者</div>
+        <div class="info-value">{{ application['applicant_user_id'] }} ({{ application['applicant_shozoku'] }})</div>
+    </div>
+
+    <div class="info-row">
+        <div class="info-label">作成日時</div>
+        <div class="info-value">{{ application['created_at'].strftime('%Y-%m-%d %H:%M') if application['created_at'] else '-' }}</div>
+    </div>
+
+    <div class="info-row">
+        <div class="info-label">提出日時</div>
+        <div class="info-value">{{ application['submitted_at'].strftime('%Y-%m-%d %H:%M') if application['submitted_at'] else '-' }}</div>
+    </div>
+
+    {% if application['remarks'] %}
+    <div class="info-row">
+        <div class="info-label">備考</div>
+        <div class="info-value">{{ application['remarks'] }}</div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- 申請内容 -->
+<div class="detail-section">
+    <h3>申請内容</h3>
+
+    {% if is_multi_record and records_by_seq %}
+    <!-- 複数レコード申請の場合はテーブル表示 -->
+    <table style="width: 100%; border-collapse: collapse; margin-top: 1rem;">
+        <thead>
+            <tr style="background-color: #f8f9fa; border: 1px solid #ddd;">
+                <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">アクション</th>
+                {% if records_by_seq %}
+                    {% set first_record = records_by_seq[records_by_seq.keys()|list|first] %}
+                    {% for field in first_record['fields'] %}
+                        {% if field['is_visible'] == 'Y' %}
+                        <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd;">{{ field['field_name'] }}</th>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for seq, record in records_by_seq.items()|sort %}
+            <tr style="border: 1px solid #ddd;">
+                <td style="padding: 0.75rem; border: 1px solid #ddd;">
+                    {% if record['action'] == 'add' %}
+                    <span class="action-badge" style="background-color: #d4edda; color: #155724;">追加</span>
+                    {% elif record['action'] == 'modify' %}
+                    <span class="action-badge" style="background-color: #fff3cd; color: #856404;">修正</span>
+                    {% elif record['action'] == 'delete' %}
+                    <span class="action-badge" style="background-color: #f8d7da; color: #721c24;">削除</span>
+                    {% endif %}
+                </td>
+                {% for field in record['fields'] %}
+                    {% if field['is_visible'] == 'Y' %}
+                    <td style="padding: 0.75rem; border: 1px solid #ddd;">
+                        {% if field.get('field_type') == 'checkbox' %}
+                            {% if field['field_value'] == 'Y' %}
+                            <span style="color: #27ae60; font-weight: bold;">☑</span>
+                            {% else %}
+                            <span style="color: #95a5a6;">☐</span>
+                            {% endif %}
+                        {% else %}
+                            {% set display_value = (field['field_label'] if field['field_label'] and field['field_label'] != 'None' else (field['field_value'] if field['field_value'] and field['field_value'] != 'None' else '-')) %}
+                            {{ display_value }}
+                        {% endif %}
+                        <!-- デバッグ: label={{ field['field_label'] }}, value={{ field['field_value'] }} -->
+                    </td>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% elif details %}
+    <!-- 単一レコード申請の場合は従来の表示 -->
+    {% for detail in details %}
+    <div class="info-row">
+        <div class="info-label">{{ detail['field_name'] }}</div>
+        {% if detail.get('field_type') == 'checkbox' %}
+        <div class="info-value">
+            {% if detail['field_value'] == 'Y' %}
+            <span style="color: #27ae60; font-weight: bold;">☑ チェック済み</span>
+            {% else %}
+            <span style="color: #95a5a6;">☐ 未チェック</span>
+            {% endif %}
+        </div>
+        {% else %}
+        {% set display_value = (detail['field_label'] if detail['field_label'] and detail['field_label'] != 'None' else (detail['field_value'] if detail['field_value'] and detail['field_value'] != 'None' else '-')) %}
+        <div class="info-value">
+            {{ display_value }}
+            <!-- デバッグ: label={{ detail['field_label'] }}, value={{ detail['field_value'] }} -->
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <p>申請内容が登録されていません。</p>
+    {% endif %}
+</div>
+
+<!-- ワークフロー進捗 -->
+{% if workflow_nodes %}
+<div class="detail-section">
+    <h3>承認状況</h3>
+
+    <div class="workflow-timeline">
+        {% for node in workflow_nodes %}
+        <div class="workflow-node {{ node['node_status'] }}">
+            <div class="node-title">
+                {{ node['node_name'] }}
+                {% if node['node_status'] == 'pending' %}(承認待ち)
+                {% elif node['node_status'] == 'approved' %}(承認済み)
+                {% elif node['node_status'] == 'rejected' %}(却下)
+                {% elif node['node_status'] == 'returned' %}(差し戻し)
+                {% elif node['node_status'] == 'skipped' %}(スキップ)
+                {% elif node['node_status'] == 'waiting' %}(待機中)
+                {% endif %}
+            </div>
+            <div class="node-info">
+                {% if node['assigned_user_id'] %}
+                承認者: {{ node['assigned_user_id'] }}<br>
+                {% endif %}
+                {% if node['actioned_at'] %}
+                処理日時: {{ node['actioned_at'].strftime('%Y-%m-%d %H:%M') }}<br>
+                {% endif %}
+                {% if node['action_comment'] %}
+                コメント: {{ node['action_comment'] }}<br>
+                {% endif %}
+
+                {# 承認待ちノードの場合、承認者候補を表示 #}
+                {% if node['node_status'] == 'pending' and node.get('approvers') %}
+                承認者候補:<br>
+                <div style="margin-left: 1rem;">
+                    {% set approvers_by_group = {} %}
+                    {% for approver in node['approvers'] %}
+                        {% set group_key = approver.get('approver_group') or 'default' %}
+                        {% if group_key not in approvers_by_group %}
+                            {% set _ = approvers_by_group.update({group_key: []}) %}
+                        {% endif %}
+                        {% set _ = approvers_by_group[group_key].append(approver) %}
+                    {% endfor %}
+
+                    {% for group_key, group_approvers in approvers_by_group.items() %}
+                        {% if group_key != 'default' %}
+                        <span style="color: #666; font-size: 0.85rem;">[{{ group_key }}]</span>
+                        {% endif %}
+                        {% for approver in group_approvers %}
+                            <span style="display: inline-block; margin: 0.2rem 0;">
+                                {{ approver['approver_user_id'] }}
+                                {% if approver.get('approval_status') == 'approved' %}
+                                <span style="color: #27ae60;">✓</span>
+                                {% endif %}
+                            </span>
+                            {% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                        {% if not loop.last %}<br>{% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {# 引き戻しボタン：自分が承認済みで引き戻し可能な場合に表示 #}
+                {% if node.get('can_recall') %}
+                <form method="POST" action="{{ url_for('application.recall_node', node_instance_id=node['node_instance_id']) }}" style="margin-top: 0.5rem;">
+                    <button type="submit" class="btn-small btn-recall"
+                            onclick="return confirm('この承認を引き戻しますか？\nこのノードが再度承認待ちになります。')">
+                        引き戻す
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div style="margin-top: 2rem; display: flex; gap: 1rem;">
+    <a href="{{ url_for('application.list') }}" class="btn btn-secondary">申請一覧に戻る</a>
+
+    {% if can_withdraw %}
+    <!-- 申請者本人が提出済みの申請を取り下げ可能（次のノードがpending/waitingの場合のみ） -->
+    <form method="POST" action="{{ url_for('application.withdraw', application_id=application['application_id']) }}"
+          onsubmit="return confirm('この申請を取り下げますか？');" style="display: inline;">
+        <button type="submit" class="btn btn-warning">申請を取り下げる</button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

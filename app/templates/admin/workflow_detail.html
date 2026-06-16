@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}ワークフロー詳細: {{ workflow['workflow_name'] }}{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    .workflow-info {
+        background-color: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .workflow-info dl {
+        display: grid;
+        grid-template-columns: 150px 1fr;
+        gap: 0.5rem;
+        margin: 0;
+    }
+    .workflow-info dt {
+        font-weight: bold;
+        color: #2c3e50;
+    }
+    .workflow-info dd {
+        margin: 0;
+        color: #34495e;
+    }
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+    .node-table {
+        width: 100%;
+        background-color: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .node-table table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .node-table th {
+        background-color: #34495e;
+        color: white;
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+    }
+    .node-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #ecf0f1;
+    }
+    .node-table tr:hover {
+        background-color: #f8f9fa;
+    }
+    .node-table tr:last-child td {
+        border-bottom: none;
+    }
+    .node-type-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        background-color: #e8f4f8;
+        color: #2980b9;
+    }
+    .action-type-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    .action-type-approval {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .action-type-auto {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+    .btn-sm {
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 0.875rem;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-info {
+        background-color: #17a2b8;
+        color: white;
+    }
+    .btn-info:hover {
+        background-color: #138496;
+    }
+    .btn-warning {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    .btn-warning:hover {
+        background-color: #e0a800;
+    }
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+    .btn-danger:hover {
+        background-color: #c82333;
+    }
+</style>
+
+<div class="page-header">
+    <h2>ワークフロー詳細: {{ workflow['workflow_name'] }}</h2>
+    <a href="{{ url_for('admin.workflow_node_new', workflow_definition_id=workflow['workflow_definition_id']) }}"
+       class="btn-primary">+ ノード追加</a>
+</div>
+
+<div class="workflow-info">
+    <dl>
+        <dt>ワークフローコード</dt>
+        <dd>{{ workflow['workflow_code'] }}</dd>
+
+        <dt>ワークフロー名</dt>
+        <dd>{{ workflow['workflow_name'] }}</dd>
+
+        <dt>バージョン</dt>
+        <dd>v{{ workflow['version'] }}</dd>
+
+        <dt>説明</dt>
+        <dd>{{ workflow['description'] if workflow['description'] else '-' }}</dd>
+
+        <dt>状態</dt>
+        <dd>{{ '有効' if workflow['is_active'] == 'Y' else '無効' }}</dd>
+    </dl>
+</div>
+
+<h3 style="margin-bottom: 1rem;">ノード定義一覧</h3>
+
+<div class="node-table">
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 60px;">順序</th>
+                <th style="width: 200px;">ノード名</th>
+                <th style="width: 150px;">ノードタイプ</th>
+                <th style="width: 100px;">特定ノード</th>
+                <th>スキップ条件</th>
+                <th style="width: 80px;">報告のみ</th>
+                <th style="width: 100px;">承認者選択</th>
+                <th style="width: 150px;">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if nodes %}
+                {% for node in nodes %}
+                <tr>
+                    <td><strong>{{ node['node_seq'] }}</strong></td>
+                    <td>{{ node['node_name'] }}</td>
+                    <td><span class="node-type-badge">{{ node['node_type'] }}</span></td>
+                    <td>{{ node['specific_value'] if node['specific_value'] else '-' }}</td>
+                    <td style="font-size: 0.875rem; color: #666;">
+                        {{ node['skip_condition'] if node['skip_condition'] else '-' }}
+                    </td>
+                    <td>{{ '○' if node['is_report_only'] == 'Y' else '-' }}</td>
+                    <td>{{ '○' if node['approver_selection_required'] == 'Y' else '-' }}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <a href="{{ url_for('admin.workflow_node_edit',
+                                              workflow_definition_id=workflow['workflow_definition_id'],
+                                              node_definition_id=node['node_definition_id']) }}"
+                               class="btn-sm btn-warning">編集</a>
+                            <form method="POST"
+                                  action="{{ url_for('admin.workflow_node_delete',
+                                                   workflow_definition_id=workflow['workflow_definition_id'],
+                                                   node_definition_id=node['node_definition_id']) }}"
+                                  style="display: inline;"
+                                  onsubmit="return confirm('本当に削除しますか？');">
+                                <button type="submit" class="btn-sm btn-danger">削除</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 2rem; color: #7f8c8d;">
+                        登録されているノード定義はありません
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<div style="margin-top: 2rem; display: flex; gap: 1rem;">
+    <a href="{{ url_for('admin.workflow_list') }}" class="btn-sm btn-info">← ワークフロー一覧に戻る</a>
+    <a href="{{ url_for('admin.workflow_edit', workflow_definition_id=workflow['workflow_definition_id']) }}"
+       class="btn-sm btn-warning">ワークフロー情報を編集</a>
+</div>
+{% endblock %}

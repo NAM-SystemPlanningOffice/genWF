@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}ノード定義{{ '編集' if mode == 'edit' else '作成' }}{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    .workflow-info {
+        background-color: #e8f4f8;
+        border-left: 4px solid #3498db;
+        padding: 1rem;
+        margin-bottom: 2rem;
+        border-radius: 4px;
+    }
+    .form-container {
+        background-color: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    .form-group label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+    .form-group textarea {
+        min-height: 80px;
+        resize: vertical;
+    }
+    .checkbox-group {
+        display: flex;
+        gap: 1.5rem;
+        margin-top: 0.5rem;
+    }
+    .checkbox-group label {
+        font-weight: normal;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+    }
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+    }
+    .btn-secondary {
+        background-color: #95a5a6;
+        color: white;
+    }
+    .btn-secondary:hover {
+        background-color: #7f8c8d;
+    }
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+    }
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+    .help-text {
+        font-size: 0.875rem;
+        color: #666;
+        margin-top: 0.25rem;
+    }
+</style>
+
+<div class="page-header">
+    <h2>ノード定義{{ '編集' if mode == 'edit' else '作成' }}</h2>
+</div>
+
+<div class="workflow-info">
+    <strong>ワークフロー:</strong> {{ workflow['workflow_name'] }} ({{ workflow['workflow_code'] }})
+</div>
+
+<div class="form-container">
+    <form method="POST" action="{{ url_for('admin.workflow_node_save', workflow_definition_id=workflow['workflow_definition_id']) }}">
+        {% if node %}
+        <input type="hidden" name="node_definition_id" value="{{ node['node_definition_id'] }}">
+        {% endif %}
+
+        <div class="form-group">
+            <label for="node_seq">ノード順序 *</label>
+            <input type="number" id="node_seq" name="node_seq" required min="1"
+                   value="{{ node['node_seq'] if node else next_seq }}">
+            <div class="help-text">実行順序（10刻みを推奨: 10, 20, 30...）</div>
+        </div>
+
+        <div class="form-group">
+            <label for="node_name">ノード名 *</label>
+            <input type="text" id="node_name" name="node_name" required
+                   value="{{ node['node_name'] if node else '' }}">
+            <div class="help-text">表示用の名前（例: 所属長承認、システム企画室承認）</div>
+        </div>
+
+        <div class="form-group">
+            <label for="node_type">ノードタイプ *</label>
+            <select id="node_type" name="node_type" required>
+                <option value="">-- 選択してください --</option>
+                <option value="applicant_dept" {% if node and node.get('node_type') == 'applicant_dept' %}selected{% endif %}>申請者所属 (applicant_dept)</option>
+                <option value="jurisdiction_dept" {% if node and node.get('node_type') == 'jurisdiction_dept' %}selected{% endif %}>所管所属 (jurisdiction_dept)</option>
+                <option value="specific_node" {% if node and node.get('node_type') == 'specific_node' %}selected{% endif %}>特定ノード (specific_node)</option>
+                <option value="specific_dept" {% if node and node.get('node_type') == 'specific_dept' %}selected{% endif %}>特定所属 (specific_dept)</option>
+                <option value="multiple_dept" {% if node and node.get('node_type') == 'multiple_dept' %}selected{% endif %}>複数所属 (multiple_dept)</option>
+                <option value="final" {% if node and node.get('node_type') == 'final' %}selected{% endif %}>最終承認 (final)</option>
+                <option value="report" {% if node and node.get('node_type') == 'report' %}selected{% endif %}>報告 (report)</option>
+            </select>
+            <div class="help-text">
+                ・applicant_dept: 申請者の所属長承認<br>
+                ・jurisdiction_dept: 所管所属の承認<br>
+                ・specific_node: 特定の承認ノード（システム企画室、経営企画部等）<br>
+                ・specific_dept: 特定の所属<br>
+                ・multiple_dept: 複数所属の並列承認<br>
+                ・final: 最終承認<br>
+                ・report: 報告
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="specific_value">特定ノード値</label>
+            <input type="text" id="specific_value" name="specific_value"
+                   value="{{ node['specific_value'] if node else '' }}">
+            <div class="help-text">node_type='specific_node' の場合に使用（例: SYS_PLAN, MGT_PLAN）</div>
+        </div>
+
+        <div class="form-group">
+            <label for="skip_condition">スキップ条件</label>
+            <textarea id="skip_condition" name="skip_condition">{{ node['skip_condition'] if node else '' }}</textarea>
+            <div class="help-text">条件式（例: applicant_shozoku = jurisdiction_dept）</div>
+        </div>
+
+        <div class="checkbox-group">
+            <label>
+                <input type="checkbox" name="is_report_only" value="Y"
+                       {% if node and node.get('is_report_only') == 'Y' %}checked{% endif %}>
+                報告のみ（承認不要）
+            </label>
+            <label>
+                <input type="checkbox" name="approver_selection_required" value="Y"
+                       {% if node and node.get('approver_selection_required') == 'Y' %}checked{% endif %}>
+                承認者選択必須
+            </label>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ url_for('admin.workflow_detail', workflow_definition_id=workflow['workflow_definition_id']) }}"
+               class="btn btn-secondary">キャンセル</a>
+            <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

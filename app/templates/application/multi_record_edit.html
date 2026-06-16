@@ -1,0 +1,731 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ app_type.application_type_name }}（編集） - ワークフロー申請システム{% endblock %}
+
+{% block flash_messages_area %}
+    {{ super() }}
+{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    .breadcrumb {
+        color: #666;
+        margin-bottom: 1rem;
+    }
+    .breadcrumb a {
+        color: #3498db;
+        text-decoration: none;
+    }
+    .form-container {
+        background-color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .info-box {
+        background-color: #e8f4f8;
+        border-left: 4px solid #3498db;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .records-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+    .records-table th {
+        background-color: #f8f9fa;
+        padding: 0.75rem;
+        text-align: left;
+        font-weight: bold;
+        border: 1px solid #ddd;
+    }
+    .records-table td {
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+    }
+    .records-table input[type="text"],
+    .records-table input[type="number"],
+    .records-table input[type="date"],
+    .records-table select,
+    .records-table textarea {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+    .records-table textarea {
+        min-height: 60px;
+        resize: vertical;
+    }
+    .action-cell {
+        text-align: center;
+        width: 100px;
+    }
+    .action-select {
+        width: 80px;
+    }
+    .btn-add-row {
+        margin-top: 1rem;
+        padding: 0.5rem 1rem;
+        background-color: #27ae60;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .btn-add-row:hover {
+        background-color: #229954;
+    }
+    .btn-remove-row {
+        padding: 0.25rem 0.5rem;
+        background-color: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.875rem;
+    }
+    .btn-remove-row:hover {
+        background-color: #c0392b;
+    }
+    .button-group {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+    }
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+    }
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+    .btn-secondary {
+        background-color: #95a5a6;
+        color: white;
+    }
+    .btn-secondary:hover {
+        background-color: #7f8c8d;
+    }
+    .row-existing {
+        background-color: #f9f9f9;
+    }
+    .row-new {
+        background-color: #e8f8f5;
+    }
+    .row-deleted {
+        background-color: #fadbd8;
+        text-decoration: line-through;
+        opacity: 0.6;
+    }
+    .row-readonly {
+        background-color: #f0f0f0;
+        color: #666;
+    }
+    .row-readonly input,
+    .row-readonly select,
+    .row-readonly textarea {
+        background-color: #f5f5f5;
+        cursor: not-allowed;
+    }
+</style>
+
+<div class="breadcrumb">
+    <a href="{{ url_for('application.index') }}">申請種類選択</a> &gt;
+    {{ app_type.application_type_name }}
+</div>
+
+<div class="page-header">
+    <h2>{{ app_type.application_type_name }}（下書き編集）</h2>
+    {% if app_type.description %}
+    <p>{{ app_type.description }}</p>
+    {% endif %}
+</div>
+
+<div class="form-container">
+    <div class="info-box">
+        <strong>申請者:</strong> {{ session.user_name }} ({{ session.shozoku_name }})<br>
+        <strong>対象リソース:</strong> {{ resource_id }}
+        {% if resource %}
+        <br>
+        {% for key, value in resource.items() %}
+        {% if value and key != 'resource_id' %}
+        <strong>{{ key }}:</strong> {{ value }}{% if not loop.last %}, {% endif %}
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+    </div>
+
+    <form method="POST" action="{{ url_for('application_multi.submit_edit_multi', application_id=application.application_id, application_type_id=app_type.application_type_id, resource_id=resource_id) }}" id="multiRecordForm">
+        <input type="hidden" name="application_id" value="{{ application.application_id }}">
+        <!-- 申請タイトル -->
+        <div style="margin-bottom: 1.5rem;">
+            <label for="application_title" style="display: block; font-weight: bold; margin-bottom: 0.5rem;">
+                申請タイトル <span style="color: #e74c3c;">*</span>
+            </label>
+            <input type="text" id="application_title" name="application_title"
+                   value="{{ application.application_title }}"
+                   style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px;"
+                   required
+                   placeholder="申請内容を簡潔に記入してください">
+        </div>
+
+        <!-- 複数レコードテーブル -->
+        <table class="records-table" id="recordsTable">
+            <thead>
+                <tr>
+                    <th style="width: 100px;">アクション</th>
+                    {% for field in fields %}
+                    {% if field.is_visible == 'Y' %}
+                    <th>{{ field.field_name }}{% if field.is_required_create == 'Y' %} *{% endif %}</th>
+                    {% endif %}
+                    {% endfor %}
+                    <th style="width: 80px;">操作</th>
+                </tr>
+            </thead>
+            <tbody id="recordsBody">
+                {% if existing_records %}
+                <!-- 既存レコード -->
+                {% for record in existing_records %}
+                {% set is_updatable = record.get('is_updatable', 'Y') %}
+                {% set record_seq = loop.index %}
+                {% set current_action = record.get('action', 'none') %}
+                <tr class="{% if current_action == 'add' %}row-new{% else %}row-existing{% endif %}" data-seq="{{ record_seq }}" data-updatable="{{ is_updatable }}">
+                    <td class="action-cell">
+                        {% if is_updatable == 'Y' %}
+                            {% if current_action == 'add' %}
+                            <!-- 追加レコードは常にaddのまま、削除ボタンで削除 -->
+                            <span class="action-badge" style="background-color: #d4edda; color: #155724;">追加</span>
+                            <input type="hidden" name="records[{{ record_seq }}][action]" value="add">
+                            {% else %}
+                            <select name="records[{{ record_seq }}][action]" class="action-select" onchange="updateRowStyle(this)">
+                                <option value="none" {% if current_action == 'none' %}selected{% endif %}>変更なし</option>
+                                {% if app_type.get('support_modify') == 'Y' %}
+                                <option value="modify" {% if current_action == 'modify' %}selected{% endif %}>修正</option>
+                                {% endif %}
+                                <option value="delete" {% if current_action == 'delete' %}selected{% endif %}>削除</option>
+                            </select>
+                            {% endif %}
+                        {% else %}
+                        <select name="records[{{ record_seq }}][action]" class="action-select" disabled>
+                            <option value="readonly" selected>参照のみ</option>
+                        </select>
+                        <input type="hidden" name="records[{{ record_seq }}][action]" value="readonly">
+                        {% endif %}
+                    </td>
+                    {% for field in fields %}
+                    {% set field_value = record.get(field.field_id, '') %}
+                    {% set field_label = record.get(field.field_id ~ '_label', field_value) %}
+                    {% if field.is_visible == 'Y' %}
+                    <td>
+                        {% if field.is_key_field == 'Y' %}
+                        <!-- キー項目は既存レコードでは表示のみ -->
+                        <input type="text" value="{{ field_label or field_value }}" readonly data-key-field="true">
+                        <input type="hidden" name="records[{{ record_seq }}][field_{{ field.field_id }}]" value="{{ field_value }}"
+                               {% if field_label and field_label != field_value %}data-label="{{ field_label }}"{% endif %}>
+                        {% elif field.field_type == 'text' %}
+                        {% if is_updatable == 'N' or field.is_editable_modify == 'N' %}
+                        <!-- readonly: labelを表示、valueをhiddenで送信 -->
+                        <input type="text" value="{{ field_label or field_value }}" readonly>
+                        <input type="hidden" name="records[{{ record_seq }}][field_{{ field.field_id }}]" value="{{ field_value }}">
+                        {% else %}
+                        <!-- editable: 通常通り -->
+                        <input type="text" name="records[{{ record_seq }}][field_{{ field.field_id }}]"
+                               value="{{ field_value }}"
+                               {% if field.is_required_create == 'Y' %}required{% endif %}>
+                        {% endif %}
+                        {% elif field.field_type == 'number' %}
+                        <input type="number" name="records[{{ record_seq }}][field_{{ field.field_id }}]"
+                               value="{{ field_value }}"
+                               {% if field.is_required_create == 'Y' %}required{% endif %}
+                               {% if is_updatable == 'N' or field.is_editable_modify == 'N' %}readonly{% endif %}>
+                        {% elif field.field_type == 'date' %}
+                        <input type="date" name="records[{{ record_seq }}][field_{{ field.field_id }}]"
+                               value="{{ field_value }}"
+                               {% if field.is_required_create == 'Y' %}required{% endif %}
+                               {% if is_updatable == 'N' or field.is_editable_modify == 'N' %}readonly{% endif %}>
+                        {% elif field.field_type == 'select' %}
+                        <select name="records[{{ record_seq }}][field_{{ field.field_id }}]"
+                                {% if field.is_required_create == 'Y' %}required{% endif %}
+                                {% if is_updatable == 'N' or field.is_editable_modify == 'N' %}disabled{% endif %}>
+                            <option value="">選択してください</option>
+                            {% if field.options %}
+                            {% for option in field.options %}
+                            <option value="{{ option.option_value }}"
+                                    {% if option.option_value == field_value %}selected{% endif %}>
+                                {{ option.option_label }}
+                            </option>
+                            {% endfor %}
+                            {% endif %}
+                        </select>
+                        {% if is_updatable == 'N' or field.is_editable_modify == 'N' %}
+                        <input type="hidden" name="records[{{ record_seq }}][field_{{ field.field_id }}]" value="{{ field_value }}">
+                        {% if field_label and field_label != field_value %}
+                        <input type="hidden" name="records[{{ record_seq }}][field_{{ field.field_id }}_label]" value="{{ field_label }}">
+                        {% endif %}
+                        {% endif %}
+                        {% elif field.field_type == 'datalist' %}
+                        <input type="text"
+                               name="records[{{ record_seq }}][field_{{ field.field_id }}]"
+                               list="datalist_{{ field.field_id }}_{{ record_seq }}"
+                               value="{{ field_value }}"
+                               {% if field.placeholder %}placeholder="{{ field.placeholder }}"{% endif %}
+                               {% if field.is_required_create == 'Y' %}required{% endif %}
+                               {% if is_updatable == 'N' or field.is_editable_modify == 'N' %}readonly{% endif %}>
+                        <datalist id="datalist_{{ field.field_id }}_{{ record_seq }}">
+                            {% if field.options %}
+                            {% for option in field.options %}
+                            <option value="{{ option.option_value }}">{{ option.option_label }}</option>
+                            {% endfor %}
+                            {% endif %}
+                        </datalist>
+                        {% elif field.field_type == 'textarea' %}
+                        <textarea name="records[{{ record_seq }}][field_{{ field.field_id }}]"
+                                  {% if field.is_required_create == 'Y' %}required{% endif %}
+                                  {% if is_updatable == 'N' or field.is_editable_modify == 'N' %}readonly{% endif %}>{{ field_value }}</textarea>
+                        {% elif field.field_type == 'checkbox' %}
+                        <input type="checkbox" name="records[{{ record_seq }}][field_{{ field.field_id }}]"
+                               value="Y"
+                               {% if field_value == 'Y' %}checked{% endif %}
+                               {% if is_updatable == 'N' or field.is_editable_modify == 'N' %}disabled{% endif %}
+                               style="width: auto; height: auto;">
+                        {% if is_updatable == 'N' or field.is_editable_modify == 'N' %}
+                        <input type="hidden" name="records[{{ record_seq }}][field_{{ field.field_id }}]" value="{{ field_value }}">
+                        {% endif %}
+                        {% endif %}
+                    </td>
+                    {% else %}
+                    <!-- 非表示フィールド：hidden inputで値を保持 -->
+                    <input type="hidden" name="records[{{ record_seq }}][field_{{ field.field_id }}]" value="{{ field_value }}">
+                    {% endif %}
+                    {% endfor %}
+                    <td class="action-cell">
+                        {% if current_action == 'add' %}
+                        <!-- 追加レコードは削除ボタンで行ごと削除 -->
+                        <button type="button" class="btn-remove-row" onclick="removeRow(this)">削除</button>
+                        {% else %}
+                        <!-- 既存レコードは削除ボタンなし（削除アクションで対応） -->
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
+
+        <button type="button" class="btn-add-row" onclick="addNewRow()">+ 行を追加</button>
+
+        <!-- 備考 -->
+        <div style="margin-top: 1.5rem;">
+            <label for="remarks" style="display: block; font-weight: bold; margin-bottom: 0.5rem;">備考</label>
+            <textarea id="remarks" name="remarks"
+                      style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; min-height: 80px;"
+                      placeholder="その他特記事項があれば記入してください">{{ application.remarks }}</textarea>
+        </div>
+
+        <!-- クライアント側エラー（重複チェック）をボタン上部に表示 -->
+        <div id="errorMessagesArea" style="margin-top: 1.5rem;">
+            <!-- 重複チェック警告がJavaScriptでここに表示される -->
+        </div>
+
+        <div class="button-group">
+            <button type="submit" name="action" value="save_draft" class="btn btn-secondary">
+                下書き保存
+            </button>
+            <button type="submit" name="action" value="submit" class="btn btn-primary">
+                申請を提出
+            </button>
+            <a href="{{ url_for('application.index') }}" class="btn btn-secondary">
+                キャンセル
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+let rowCounter = {{ existing_records|length if existing_records else 0 }};
+
+// キーフィールドのfield_id一覧（is_key_field='Y'のフィールド）
+const keyFieldIds = [
+    {% for field in fields %}
+    {% if field.is_key_field == 'Y' %}
+    {{ field.field_id }},
+    {% endif %}
+    {% endfor %}
+];
+
+// 重複チェック関数
+function checkDuplicateKey() {
+    const tbody = document.getElementById('recordsBody');
+    const rows = tbody.querySelectorAll('tr[data-seq]');
+
+    // 削除予定のレコードを除外
+    const activeRows = Array.from(rows).filter(row => {
+        const actionInput = row.querySelector('select[name*="[action]"], input[name*="[action]"]');
+        const action = actionInput ? actionInput.value : 'none';
+        return action !== 'delete';
+    });
+
+    // 各レコードのキーフィールド値を取得
+    const keyValues = activeRows.map(row => {
+        const seq = row.dataset.seq;
+        const keys = {};
+
+        keyFieldIds.forEach(fieldId => {
+            const input = row.querySelector(`[name="records[${seq}][field_${fieldId}]"]`);
+            if (input) {
+                keys[fieldId] = input.value || '';
+            }
+        });
+
+        return { seq, keys };
+    });
+
+    // 重複チェック
+    for (let i = 0; i < keyValues.length; i++) {
+        for (let j = i + 1; j < keyValues.length; j++) {
+            let isDuplicate = true;
+
+            // すべてのキーフィールドが一致するか確認
+            for (const fieldId of keyFieldIds) {
+                if (keyValues[i].keys[fieldId] !== keyValues[j].keys[fieldId]) {
+                    isDuplicate = false;
+                    break;
+                }
+            }
+
+            if (isDuplicate) {
+                // すべてのキーフィールドが空の場合は重複としない
+                const allEmpty = keyFieldIds.every(fieldId => !keyValues[i].keys[fieldId]);
+                if (!allEmpty) {
+                    return {
+                        duplicate: true,
+                        seq1: keyValues[i].seq,
+                        seq2: keyValues[j].seq,
+                        keys: keyValues[i].keys
+                    };
+                }
+            }
+        }
+    }
+
+    return { duplicate: false };
+}
+
+function addNewRow() {
+    rowCounter++;
+    const tbody = document.getElementById('recordsBody');
+    const newRow = document.createElement('tr');
+    newRow.className = 'row-new';
+    newRow.dataset.seq = rowCounter;
+
+    let html = `
+        <td class="action-cell">
+            <select name="records[${rowCounter}][action]" class="action-select" disabled>
+                <option value="add" selected>追加</option>
+            </select>
+            <input type="hidden" name="records[${rowCounter}][action]" value="add">
+        </td>
+    `;
+
+    {% for field in fields %}
+    {% if field.is_visible == 'Y' %}
+    html += '<td>';
+    {% if field.is_key_field == 'Y' and field.field_type == 'select' and app_type.record_add_mode == 'select' %}
+    // selectモード：キー項目かつselectの場合は未登録レコードのみ表示
+    html += `<select name="records[${rowCounter}][field_{{ field.field_id }}]"
+                    {% if field.is_required_create == 'Y' %}required{% endif %}
+                    data-key-field="true"
+                    onchange="fillHiddenFields(this, ${rowCounter}); checkAndShowDuplicateWarning();">
+        <option value="">選択してください</option>
+        {% if available_records %}
+        {% for record in available_records %}
+        <option value="{{ record[field.resource_column_name] }}"
+                {% for f in fields %}
+                {% if f.resource_column_name %}
+                data-field-{{ f.field_id }}="{{ record[f.resource_column_name] }}"
+                {% endif %}
+                {% endfor %}>
+            {{ record[field.resource_label_column] if field.resource_label_column and record.get(field.resource_label_column) else record[field.resource_column_name] }}
+        </option>
+        {% endfor %}
+        {% endif %}
+    </select>`;
+    {% elif field.field_type == 'text' %}
+    html += `<input type="text" name="records[${rowCounter}][field_{{ field.field_id }}]" {% if field.is_required_create == 'Y' %}required{% endif %}{% if field.is_key_field == 'Y' %} data-key-field="true" oninput="checkAndShowDuplicateWarning()"{% endif %}>`;
+    {% elif field.field_type == 'number' %}
+    html += `<input type="number" name="records[${rowCounter}][field_{{ field.field_id }}]" {% if field.is_required_create == 'Y' %}required{% endif %}{% if field.is_key_field == 'Y' %} data-key-field="true" oninput="checkAndShowDuplicateWarning()"{% endif %}>`;
+    {% elif field.field_type == 'date' %}
+    html += `<input type="date" name="records[${rowCounter}][field_{{ field.field_id }}]" {% if field.is_required_create == 'Y' %}required{% endif %}{% if field.is_key_field == 'Y' %} data-key-field="true" onchange="checkAndShowDuplicateWarning()"{% endif %}>`;
+    {% elif field.field_type == 'select' %}
+    html += `<select name="records[${rowCounter}][field_{{ field.field_id }}]" {% if field.is_required_create == 'Y' %}required{% endif %}{% if field.is_key_field == 'Y' %} data-key-field="true" onchange="checkAndShowDuplicateWarning()"{% endif %}>
+        <option value="">選択してください</option>
+        {% if field.options %}
+        {% for option in field.options %}
+        <option value="{{ option.option_value }}">{{ option.option_label }}</option>
+        {% endfor %}
+        {% endif %}
+    </select>`;
+    {% elif field.field_type == 'datalist' %}
+    html += `<input type="text" name="records[${rowCounter}][field_{{ field.field_id }}]" list="datalist_{{ field.field_id }}_${rowCounter}" {% if field.is_required_create == 'Y' %}required{% endif %}{% if field.is_key_field == 'Y' %} data-key-field="true" oninput="checkAndShowDuplicateWarning()"{% endif %}>
+        <datalist id="datalist_{{ field.field_id }}_${rowCounter}">
+        {% if field.options %}
+        {% for option in field.options %}
+        <option value="{{ option.option_value }}">{{ option.option_label }}</option>
+        {% endfor %}
+        {% endif %}
+        </datalist>`;
+    {% elif field.field_type == 'textarea' %}
+    html += `<textarea name="records[${rowCounter}][field_{{ field.field_id }}]" {% if field.is_required_create == 'Y' %}required{% endif %}></textarea>`;
+    {% elif field.field_type == 'checkbox' %}
+    html += `<input type="checkbox" name="records[${rowCounter}][field_{{ field.field_id }}]" value="Y" style="width: auto; height: auto;">`;
+    {% endif %}
+    html += '</td>';
+    {% else %}
+    // 非表示フィールド
+    html += `<input type="hidden" name="records[${rowCounter}][field_{{ field.field_id }}]" value="" id="hidden_field_{{ field.field_id }}_${rowCounter}">`;
+    {% endif %}
+    {% endfor %}
+
+    html += `<td class="action-cell"><button type="button" class="btn-remove-row" onclick="removeRow(this)">削除</button></td>`;
+
+    newRow.innerHTML = html;
+    tbody.appendChild(newRow);
+}
+
+function removeRow(button) {
+    const row = button.closest('tr');
+    row.remove();
+    // 行削除後も重複チェック
+    checkAndShowDuplicateWarning();
+}
+
+// 重複チェックして警告を表示
+function checkAndShowDuplicateWarning() {
+    const result = checkDuplicateKey();
+    const warningDiv = document.getElementById('duplicateWarning');
+
+    if (!warningDiv) {
+        // 警告エリアを作成（初回のみ）- エラー表示エリアの先頭に挿入
+        const errorArea = document.getElementById('errorMessagesArea');
+        const newWarningDiv = document.createElement('div');
+        newWarningDiv.id = 'duplicateWarning';
+        newWarningDiv.style.display = 'none';
+        newWarningDiv.style.backgroundColor = '#f8d7da';
+        newWarningDiv.style.color = '#721c24';
+        newWarningDiv.style.padding = '12px';
+        newWarningDiv.style.marginBottom = '20px';
+        newWarningDiv.style.border = '1px solid #f5c6cb';
+        newWarningDiv.style.borderRadius = '4px';
+        errorArea.insertBefore(newWarningDiv, errorArea.firstChild);
+    }
+
+    const warningElement = document.getElementById('duplicateWarning');
+
+    if (result.duplicate) {
+        const keyFieldNames = [];
+        {% for field in fields %}
+        {% if field.is_key_field == 'Y' %}
+        keyFieldNames.push('{{ field.field_name }}');
+        {% endif %}
+        {% endfor %}
+
+        warningElement.innerHTML = `
+            <strong>⚠️ 重複エラー</strong><br>
+            キーフィールド（${keyFieldNames.join(', ')}）の組み合わせが重複しています。<br>
+            レコード番号 ${result.seq1} と ${result.seq2} が同じ値です。
+        `;
+        warningElement.style.display = 'block';
+
+        // 送信ボタンを無効化
+        const submitButtons = document.querySelectorAll('button[type="submit"]');
+        submitButtons.forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+        });
+    } else {
+        warningElement.style.display = 'none';
+
+        // 送信ボタンを有効化
+        const submitButtons = document.querySelectorAll('button[type="submit"]');
+        submitButtons.forEach(btn => {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        });
+    }
+}
+
+function updateRowStyle(select) {
+    const row = select.closest('tr');
+    const action = select.value;
+    const isUpdatable = row.dataset.updatable;
+
+    row.classList.remove('row-existing', 'row-deleted', 'row-readonly');
+
+    if (action === 'readonly') {
+        row.classList.add('row-readonly');
+        // 参照のみの場合は全フィールドをdisableにし、hidden inputで値を保持
+        row.querySelectorAll('input:not([type="hidden"]), select:not(.action-select), textarea').forEach(input => {
+            if (input !== select && !input.disabled) {
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = input.name;
+                hiddenInput.value = input.value;
+                input.parentNode.insertBefore(hiddenInput, input.nextSibling);
+                input.disabled = true;
+            }
+        });
+    } else if (action === 'delete') {
+        row.classList.add('row-deleted');
+        // 削除時は全フィールドをdisableにし、hidden inputで値を保持
+        row.querySelectorAll('input:not([type="hidden"]), select:not(.action-select), textarea').forEach(input => {
+            if (input !== select && !input.disabled) {
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = input.name;
+                hiddenInput.value = input.value;
+                input.parentNode.insertBefore(hiddenInput, input.nextSibling);
+                input.disabled = true;
+            }
+        });
+    } else if (action === 'none') {
+        row.classList.add('row-existing');
+        // 変更なしの場合は全フィールドをdisableにし、hidden inputで値を保持
+        row.querySelectorAll('input:not([readonly]):not([type="hidden"]), select:not(.action-select), textarea:not([readonly])').forEach(input => {
+            if (!input.disabled) {
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = input.name;
+                hiddenInput.value = input.value;
+                input.parentNode.insertBefore(hiddenInput, input.nextSibling);
+                input.disabled = true;
+            }
+        });
+    } else if (action === 'modify' || action === 'add') {
+        row.classList.add('row-existing');
+        // 修正時・追加時は入力フィールドをenableにする（更新可能かつ編集可能な場合のみ）
+        if (isUpdatable !== 'N') {
+            // まず、既存のhidden inputを削除（none/delete等から変更された場合）
+            row.querySelectorAll('input[type="hidden"]:not([name*="[action]"])').forEach(hidden => {
+                const originalInput = hidden.previousSibling;
+                if (originalInput && (originalInput.tagName === 'INPUT' || originalInput.tagName === 'SELECT' || originalInput.tagName === 'TEXTAREA')) {
+                    hidden.remove();
+                }
+            });
+            // フィールドをenableにする
+            row.querySelectorAll('input:not([readonly]):not([data-key-field]), select:not(.action-select), textarea:not([readonly])').forEach(input => {
+                input.disabled = false;
+            });
+        }
+    } else {
+        row.classList.add('row-existing');
+    }
+}
+
+// キー項目選択時に非表示フィールドに値をセット
+function fillHiddenFields(selectElement, rowSeq) {
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+
+    if (!selectedOption || !selectedOption.value) {
+        return;
+    }
+
+    // data属性から各フィールドの値を取得して非表示フィールドにセット
+    const row = selectElement.closest('tr');
+
+    {% for field in fields %}
+    {% if field.is_visible == 'N' %}
+    const fieldValue_{{ field.field_id }} = selectedOption.getAttribute('data-field-{{ field.field_id }}');
+    const hiddenInput_{{ field.field_id }} = row.querySelector('input[name="records[' + rowSeq + '][field_{{ field.field_id }}]"]');
+    if (hiddenInput_{{ field.field_id }} && fieldValue_{{ field.field_id }}) {
+        hiddenInput_{{ field.field_id }}.value = fieldValue_{{ field.field_id }};
+    }
+    {% endif %}
+    {% endfor %}
+
+    // 可視フィールドにも値をセット（キー項目以外の表示項目）
+    {% for field in fields %}
+    {% if field.is_visible == 'Y' and field.is_key_field != 'Y' %}
+    const visibleValue_{{ field.field_id }} = selectedOption.getAttribute('data-field-{{ field.field_id }}');
+    const visibleInput_{{ field.field_id }} = row.querySelector('[name="records[' + rowSeq + '][field_{{ field.field_id }}]"]');
+    if (visibleInput_{{ field.field_id }} && visibleValue_{{ field.field_id }}) {
+        visibleInput_{{ field.field_id }}.value = visibleValue_{{ field.field_id }};
+    }
+    {% endif %}
+    {% endfor %}
+}
+
+// 初期表示時に「変更なし」のレコードのフィールドをdisable
+document.addEventListener('DOMContentLoaded', function() {
+    const existingRows = document.querySelectorAll('tr.row-existing');
+    existingRows.forEach(row => {
+        const actionSelect = row.querySelector('.action-select');
+        if (actionSelect && actionSelect.value === 'none') {
+            // 変更なしの場合は編集可能なフィールドをdisable
+            row.querySelectorAll('input:not([readonly]):not([data-key-field]), select:not(.action-select), textarea:not([readonly])').forEach(input => {
+                input.disabled = true;
+            });
+        }
+    });
+});
+
+// フォーム送信時にcheckboxの値を処理（チェックされていない場合は'N'を送信）
+document.getElementById('multiRecordForm').addEventListener('submit', function(e) {
+    const submitButton = e.submitter;
+
+    // 連打防止: ボタンを無効化（バリデーション前に実行）
+    disableSubmitButtons(submitButton);
+
+    const tbody = document.getElementById('recordsBody');
+    const rows = tbody.querySelectorAll('tr');
+
+    rows.forEach((row) => {
+        // checkbox要素の処理
+        row.querySelectorAll('input[type="checkbox"][name*="field_"]').forEach(checkbox => {
+            if (!checkbox.disabled && !checkbox.checked) {
+                const hiddenField = document.createElement('input');
+                hiddenField.type = 'hidden';
+                hiddenField.name = checkbox.name;
+                hiddenField.value = 'N';
+                row.appendChild(hiddenField);
+            }
+        });
+    });
+});
+
+// 連打防止: 送信ボタンを無効化する関数
+function disableSubmitButtons(clickedButton) {
+    // クリックされたボタンを無効化
+    clickedButton.disabled = true;
+    clickedButton.style.opacity = '0.6';
+    clickedButton.style.cursor = 'not-allowed';
+
+    // ボタンのテキストを保存して「処理中...」に変更
+    const originalText = clickedButton.textContent.trim();
+    clickedButton.setAttribute('data-original-text', originalText);
+    clickedButton.textContent = '処理中...';
+
+    // 他の送信ボタンも無効化（二重送信防止）
+    const allButtons = document.querySelectorAll('button[type="submit"]');
+    allButtons.forEach(btn => {
+        if (btn !== clickedButton) {
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+        }
+    });
+}
+</script>
+{% endblock %}

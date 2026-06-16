@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ワークフロー申請システム{% endblock %}</title>
+    <style>
+        body {
+            font-family: "Segoe UI", "メイリオ", sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 1rem 2rem;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .flash-messages {
+            margin: 1rem 0;
+        }
+        .alert {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .alert-error,
+        .alert-danger {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .alert-warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+        }
+        .alert-info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .nav-bar {
+            background-color: #34495e;
+            padding: 0;
+        }
+        .nav-bar ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+        .nav-bar li {
+            margin: 0;
+        }
+        .nav-bar a {
+            display: block;
+            padding: 1rem 1.5rem;
+            color: white;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+        .nav-bar a:hover {
+            background-color: #2c3e50;
+        }
+        .nav-bar .user-info {
+            margin-left: auto;
+            padding: 1rem 1.5rem;
+            color: #ecf0f1;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <header class="header">
+        <h1>ワークフロー申請システム</h1>
+    </header>
+
+    {% if session.user_id %}
+    <nav class="nav-bar">
+        <ul>
+            <li><a href="{{ url_for('application.list') }}">申請一覧</a></li>
+            <li><a href="{{ url_for('approval.task_list') }}">承認要</a></li>
+            <li><a href="{{ url_for('application.index') }}">新規申請</a></li>
+            {% if session.is_admin %}
+            <li><a href="{{ url_for('admin.index') }}">管理画面</a></li>
+            {% endif %}
+            <li class="user-info">{{ session.user_name }} | <a href="{{ url_for('auth.logout') }}" style="color: #ecf0f1;">ログアウト</a></li>
+        </ul>
+    </nav>
+    {% endif %}
+
+    <div class="container">
+        {% block flash_messages_area %}
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+        {% endblock %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

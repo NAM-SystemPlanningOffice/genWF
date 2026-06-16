@@ -1,0 +1,430 @@
+{% extends 'base.html' %}
+
+{% block title %}承認処理 - ワークフロー申請システム{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    .page-header h2 {
+        margin: 0 0 0.5rem 0;
+        color: #2c3e50;
+    }
+    .breadcrumb {
+        color: #666;
+        margin-bottom: 1rem;
+    }
+    .breadcrumb a {
+        color: #3498db;
+        text-decoration: none;
+    }
+    .alert-warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffc107;
+        color: #856404;
+        padding: 1rem;
+        border-radius: 4px;
+        margin-bottom: 1.5rem;
+    }
+    .detail-section {
+        background-color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 1.5rem;
+    }
+    .detail-section h3 {
+        margin-top: 0;
+        color: #2c3e50;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 0.5rem;
+    }
+    .info-row {
+        display: flex;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    .info-label {
+        font-weight: bold;
+        color: #555;
+        width: 400px;
+        flex-shrink: 0;
+        margin-right: 2rem;
+    }
+    .info-value {
+        color: #333;
+        flex: 1;
+    }
+    .action-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        background-color: #ecf0f1;
+        color: #2c3e50;
+    }
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: bold;
+        color: #333;
+    }
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+        box-sizing: border-box;
+    }
+    textarea.form-control {
+        min-height: 100px;
+        resize: vertical;
+    }
+    .button-group {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 1rem;
+    }
+    .btn-success {
+        background-color: #27ae60;
+        color: white;
+    }
+    .btn-success:hover {
+        background-color: #229954;
+    }
+    .btn-warning {
+        background-color: #f39c12;
+        color: white;
+    }
+    .btn-warning:hover {
+        background-color: #e67e22;
+    }
+    .btn-danger {
+        background-color: #e74c3c;
+        color: white;
+    }
+    .btn-danger:hover {
+        background-color: #c0392b;
+    }
+    .btn-secondary {
+        background-color: #95a5a6;
+        color: white;
+    }
+    .btn-secondary:hover {
+        background-color: #7f8c8d;
+    }
+    .approvers-info {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 4px;
+        margin-bottom: 1rem;
+    }
+    .approvers-info h4 {
+        margin-top: 0;
+        font-size: 1rem;
+        color: #2c3e50;
+    }
+    .approvers-info ul {
+        margin: 0.5rem 0 0 1.5rem;
+        padding: 0;
+    }
+</style>
+
+<div class="breadcrumb">
+    <a href="{{ url_for('approval.task_list') }}">承認待ちタスク一覧</a> &gt;
+    承認処理
+</div>
+
+<div class="page-header">
+    <h2>承認処理</h2>
+</div>
+
+<div class="alert-warning">
+    <strong>承認ノード:</strong> {{ task['node_name'] }}<br>
+    この申請を承認または却下してください。
+</div>
+
+<!-- 申請基本情報 -->
+<div class="detail-section">
+    <h3>申請情報</h3>
+
+    <div class="info-row">
+        <div class="info-label">申請ID</div>
+        <div class="info-value">{{ application['application_id'] }}</div>
+    </div>
+
+    <div class="info-row">
+        <div class="info-label">申請種類</div>
+        <div class="info-value">{{ application['application_type_name'] }}</div>
+    </div>
+
+    <div class="info-row">
+        <div class="info-label">申請タイトル</div>
+        <div class="info-value">{{ application['application_title'] }}</div>
+    </div>
+
+    <div class="info-row">
+        <div class="info-label">申請区分</div>
+        <div class="info-value">
+            <span class="action-badge">
+                {% if application['action_type'] == 'create' %}新規
+                {% elif application['action_type'] == 'modify' %}修正
+                {% elif application['action_type'] == 'delete' %}削除
+                {% else %}{{ application['action_type'] }}{% endif %}
+            </span>
+        </div>
+    </div>
+
+    <div class="info-row">
+        <div class="info-label">申請者</div>
+        <div class="info-value">{{ application['applicant_user_id'] }} ({{ application['applicant_shozoku'] }})</div>
+    </div>
+
+    <div class="info-row">
+        <div class="info-label">提出日時</div>
+        <div class="info-value">{{ application['submitted_at'].strftime('%Y-%m-%d %H:%M') if application['submitted_at'] else '-' }}</div>
+    </div>
+
+    {% if application['remarks'] %}
+    <div class="info-row">
+        <div class="info-label">備考</div>
+        <div class="info-value">{{ application['remarks'] }}</div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- 申請内容 -->
+<div class="detail-section">
+    <h3>申請内容</h3>
+
+    {% if is_multi_record and details_grouped %}
+    <!-- 複数レコード形式の表示 -->
+    <style>
+        .record-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+        .record-table th {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: bold;
+            color: #495057;
+        }
+        .record-table td {
+            border: 1px solid #dee2e6;
+            padding: 0.75rem;
+            color: #333;
+        }
+        .record-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .record-action-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+        .action-add {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .action-modify {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .action-delete {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+
+    {% if details_grouped %}
+    <table class="record-table">
+        <thead>
+            <tr>
+                <th style="width: 80px;">レコード</th>
+                {% if details_grouped[1] %}
+                {% for field in details_grouped[1] %}
+                <th>{{ field['field_name'] }}</th>
+                {% endfor %}
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for seq in details_grouped.keys()|sort %}
+            <tr>
+                <td>
+                    {{ seq }}
+                    {% if details_grouped[seq] and details_grouped[seq][0].get('detail_action') %}
+                    {% set action = details_grouped[seq][0].get('detail_action') %}
+                    {% if action == 'add' %}
+                    <span class="record-action-badge action-add">追加</span>
+                    {% elif action == 'modify' %}
+                    <span class="record-action-badge action-modify">修正</span>
+                    {% elif action == 'delete' %}
+                    <span class="record-action-badge action-delete">削除</span>
+                    {% endif %}
+                    {% endif %}
+                </td>
+                {% for field in details_grouped[seq] %}
+                <td>
+                    {% if field.get('field_type') == 'checkbox' %}
+                        {% if field['field_value'] == 'Y' %}
+                        <span style="color: #27ae60; font-weight: bold;">☑</span>
+                        {% else %}
+                        <span style="color: #95a5a6;">☐</span>
+                        {% endif %}
+                    {% else %}
+                        {% set display_value = (field['field_label'] if field['field_label'] and field['field_label'] != 'None' else (field['field_value'] if field['field_value'] and field['field_value'] != 'None' else '-')) %}
+                        {{ display_value }}
+                    {% endif %}
+                    <!-- デバッグ: label={{ field['field_label'] }}, value={{ field['field_value'] }} -->
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    {% elif details %}
+    <!-- 単一レコード形式の表示 -->
+    {% for detail in details %}
+    <div class="info-row">
+        <div class="info-label">{{ detail['field_name'] }}</div>
+        {% if detail.get('field_type') == 'checkbox' %}
+        <div class="info-value">
+            {% if detail['field_value'] == 'Y' %}
+            <span style="color: #27ae60; font-weight: bold;">☑ チェック済み</span>
+            {% else %}
+            <span style="color: #95a5a6;">☐ 未チェック</span>
+            {% endif %}
+        </div>
+        {% else %}
+        {% set display_value = (detail['field_label'] if detail['field_label'] and detail['field_label'] != 'None' else (detail['field_value'] if detail['field_value'] and detail['field_value'] != 'None' else '-')) %}
+        <div class="info-value">
+            {{ display_value }}
+            <!-- デバッグ: label={{ detail['field_label'] }}, value={{ detail['field_value'] }} -->
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <p>申請内容が登録されていません。</p>
+    {% endif %}
+</div>
+
+<!-- 承認者情報 -->
+{% if approvers and approvers|length > 1 %}
+<div class="detail-section">
+    <div class="approvers-info">
+        <h4>このノードの承認者候補（誰か一人が承認すれば次へ進みます）</h4>
+        <ul>
+            {% for approver in approvers %}
+            <li>{{ approver['approver_user_id'] }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endif %}
+
+<!-- 承認アクション -->
+<div class="detail-section">
+    <h3>承認処理</h3>
+
+    <form method="POST" action="{{ url_for('approval.action_task', node_instance_id=task['node_instance_id']) }}" id="approvalForm">
+        <div class="form-group">
+            <label for="comment">コメント</label>
+            <textarea id="comment" name="comment" class="form-control"
+                      placeholder="承認または却下の理由をご記入ください（任意）"></textarea>
+        </div>
+
+        <div class="button-group">
+            <button type="submit" name="action" value="approve" class="btn btn-success">
+                承認する
+            </button>
+            <button type="submit" name="action" value="return" class="btn btn-warning">
+                差し戻す
+            </button>
+            <button type="submit" name="action" value="reject" class="btn btn-danger">
+                却下する
+            </button>
+            <a href="{{ url_for('approval.task_list') }}" class="btn btn-secondary">
+                キャンセル
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+// 承認アクションの確認ダイアログと連打防止
+document.getElementById('approvalForm').addEventListener('submit', function(e) {
+    const submitButton = e.submitter;
+    const action = submitButton.value;
+
+    // 確認メッセージ
+    let confirmMessage = '';
+    if (action === 'approve') {
+        confirmMessage = 'この申請を承認しますか？';
+    } else if (action === 'return') {
+        confirmMessage = 'この申請を差し戻しますか？\n申請者が修正して再提出できます。';
+    } else if (action === 'reject') {
+        confirmMessage = 'この申請を却下しますか？\n却下するとワークフローは終了します。';
+    }
+
+    // 確認ダイアログ
+    if (confirmMessage && !confirm(confirmMessage)) {
+        e.preventDefault();
+        return false;
+    }
+
+    // 連打防止: ボタンを無効化
+    disableSubmitButtons(submitButton, action);
+    return true;
+});
+
+// 連打防止: 送信ボタンを無効化する関数
+function disableSubmitButtons(clickedButton, action) {
+    // クリックされたボタンを無効化
+    clickedButton.disabled = true;
+    clickedButton.style.opacity = '0.6';
+    clickedButton.style.cursor = 'not-allowed';
+
+    // ボタンのテキストを「処理中...」に変更
+    const originalText = clickedButton.textContent.trim();
+    clickedButton.setAttribute('data-original-text', originalText);
+    clickedButton.textContent = '処理中...';
+
+    // 他の送信ボタンも無効化（二重送信防止）
+    const allButtons = document.querySelectorAll('button[type="submit"]');
+    allButtons.forEach(btn => {
+        if (btn !== clickedButton) {
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+        }
+    });
+}
+</script>
+{% endblock %}

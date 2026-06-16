@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}申請タイプ一覧{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    .page-header h2 {
+        margin: 0;
+    }
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+    .types-table {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    thead {
+        background-color: #f8f9fa;
+    }
+    th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: bold;
+        color: #2c3e50;
+        border-bottom: 2px solid #e0e0e0;
+    }
+    td {
+        padding: 1rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        margin-right: 0.25rem;
+    }
+    .badge-success {
+        background-color: #27ae60;
+        color: white;
+    }
+    .badge-secondary {
+        background-color: #95a5a6;
+        color: white;
+    }
+    .btn-small {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        margin: 0 0.25rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        text-decoration: none;
+        color: white;
+    }
+    .btn-edit {
+        background-color: #3498db;
+    }
+    .btn-edit:hover {
+        background-color: #2980b9;
+    }
+    .no-data {
+        padding: 3rem;
+        text-align: center;
+        color: #666;
+    }
+</style>
+
+<div class="page-header">
+    <h2>申請タイプ一覧</h2>
+    <a href="{{ url_for('admin.application_type_new') }}" class="btn btn-primary">新規申請タイプ作成</a>
+</div>
+
+{% if application_types %}
+<div class="types-table">
+    <table>
+        <thead>
+            <tr>
+                <th>コード</th>
+                <th>名前</th>
+                <th>対応操作</th>
+                <th>ワークフロー</th>
+                <th>状態</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for type in application_types %}
+            <tr>
+                <td>{{ type['application_type_code'] }}</td>
+                <td>{{ type['application_type_name'] }}</td>
+                <td>
+                    {% if type['support_create'] == 'Y' %}
+                    <span class="badge badge-success">作成</span>
+                    {% endif %}
+                    {% if type['support_modify'] == 'Y' %}
+                    <span class="badge badge-success">修正</span>
+                    {% endif %}
+                    {% if type['support_delete'] == 'Y' %}
+                    <span class="badge badge-success">削除</span>
+                    {% endif %}
+                </td>
+                <td>{{ type.get('workflow_definition_id', '-') }}</td>
+                <td>
+                    {% if type['is_active'] == 'Y' %}
+                    <span class="badge badge-success">有効</span>
+                    {% else %}
+                    <span class="badge badge-secondary">無効</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('admin.application_type_edit', application_type_id=type['application_type_id']) }}"
+                       class="btn-small btn-edit">編集</a>
+                    <a href="{{ url_for('admin.application_type_fields', application_type_id=type['application_type_id']) }}"
+                       class="btn-small btn-edit">フィールド</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="types-table">
+    <div class="no-data">
+        申請タイプが登録されていません
+    </div>
+</div>
+{% endif %}
+{% endblock %}

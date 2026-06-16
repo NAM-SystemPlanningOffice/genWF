@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+
+{% block title %}フィールド{{ '編集' if mode == 'edit' else '作成' }}{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    .breadcrumb {
+        color: #666;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+    }
+    .breadcrumb a {
+        color: #3498db;
+        text-decoration: none;
+    }
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+    .form-container {
+        background-color: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    .form-group label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+    .form-group textarea {
+        min-height: 80px;
+        resize: vertical;
+    }
+    .checkbox-group {
+        display: flex;
+        gap: 1.5rem;
+        margin-top: 0.5rem;
+    }
+    .checkbox-group label {
+        font-weight: normal;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .form-section {
+        margin-bottom: 2rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    .form-section:last-child {
+        border-bottom: none;
+    }
+    .form-section h3 {
+        color: #3498db;
+        margin-top: 0;
+    }
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+    }
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+    }
+    .btn-secondary {
+        background-color: #95a5a6;
+        color: white;
+    }
+    .btn-secondary:hover {
+        background-color: #7f8c8d;
+    }
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+    }
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+    .help-text {
+        font-size: 0.875rem;
+        color: #666;
+        margin-top: 0.25rem;
+    }
+    .validation-rules {
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 1rem;
+        background-color: #f8f9fa;
+    }
+    .validation-rule-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        background-color: white;
+        border-radius: 4px;
+        margin-bottom: 0.5rem;
+    }
+    .validation-rule-item:last-child {
+        margin-bottom: 0;
+    }
+    .validation-rule-item input[type="checkbox"] {
+        width: auto;
+    }
+    .validation-rule-info {
+        flex: 1;
+    }
+    .validation-rule-order {
+        width: 50px;
+        padding: 0.25rem;
+        text-align: center;
+    }
+    .rule-code {
+        font-family: monospace;
+        background-color: #f8f9fa;
+        padding: 0.125rem 0.25rem;
+        border-radius: 3px;
+        font-size: 0.875rem;
+    }
+</style>
+
+<div class="breadcrumb">
+    <a href="{{ url_for('admin.application_type_list') }}">申請タイプ一覧</a> &gt;
+    <a href="{{ url_for('admin.application_type_fields', application_type_id=application_type['application_type_id']) }}">フィールド定義</a> &gt;
+    フィールド{{ '編集' if mode == 'edit' else '作成' }}
+</div>
+
+<div class="page-header">
+    <h2>フィールド{{ '編集' if mode == 'edit' else '作成' }} - {{ application_type['application_type_name'] }}</h2>
+</div>
+
+<div class="form-container">
+    <form method="POST" action="{{ url_for('admin.field_save') }}">
+        {% if field %}
+        <input type="hidden" name="field_id" value="{{ field['field_id'] }}">
+        {% endif %}
+        <input type="hidden" name="application_type_id" value="{{ application_type['application_type_id'] }}">
+
+        <div class="form-section">
+            <h3>基本情報</h3>
+
+            <div class="form-group">
+                <label for="field_code">フィールドコード *</label>
+                <input type="text" id="field_code" name="field_code" required
+                       value="{{ field['field_code'] if field and field['field_code'] else '' }}"
+                       {% if mode == 'edit' %}readonly{% endif %}>
+                <div class="help-text">一意の識別コード（例: user_cd）</div>
+            </div>
+
+            <div class="form-group">
+                <label for="field_name">フィールド名 *</label>
+                <input type="text" id="field_name" name="field_name" required
+                       value="{{ field['field_name'] if field and field['field_name'] else '' }}">
+                <div class="help-text">表示用の名前（例: ユーザーコード）</div>
+            </div>
+
+            <div class="form-group">
+                <label for="field_type">フィールドタイプ *</label>
+                <select id="field_type" name="field_type" required>
+                    <option value="text" {% if not field or field.get('field_type') == 'text' %}selected{% endif %}>text</option>
+                    <option value="number" {% if field and field.get('field_type') == 'number' %}selected{% endif %}>number</option>
+                    <option value="date" {% if field and field.get('field_type') == 'date' %}selected{% endif %}>date</option>
+                    <option value="select" {% if field and field.get('field_type') == 'select' %}selected{% endif %}>select（プルダウン選択のみ）</option>
+                    <option value="datalist" {% if field and field.get('field_type') == 'datalist' %}selected{% endif %}>datalist（プルダウン選択＋自由入力）</option>
+                    <option value="textarea" {% if field and field.get('field_type') == 'textarea' %}selected{% endif %}>textarea</option>
+                    <option value="checkbox" {% if field and field.get('field_type') == 'checkbox' %}selected{% endif %}>checkbox（チェックボックス）</option>
+                </select>
+                <div class="help-text">
+                    select: プルダウンから選択のみ（自由入力不可）<br>
+                    datalist: プルダウン候補を表示し、選択または自由入力が可能<br>
+                    checkbox: チェックボックス（値: Y/N）
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="display_order">表示順序</label>
+                <input type="number" id="display_order" name="display_order"
+                       value="{{ field['display_order'] if field and field['display_order'] is not none else '' }}">
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>アクションタイプ別設定</h3>
+
+            <div class="form-group">
+                <label>新規作成 (create)</label>
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" name="is_required_create" value="Y"
+                               {% if not field or field.get('is_required_create') == 'Y' %}checked{% endif %}>
+                        必須入力
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>修正 (modify)</label>
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" name="is_required_modify" value="Y"
+                               {% if field and field.get('is_required_modify') == 'Y' %}checked{% endif %}>
+                        必須入力
+                    </label>
+                    <label>
+                        <input type="checkbox" name="is_editable_modify" value="Y"
+                               {% if not field or field.get('is_editable_modify') == 'Y' %}checked{% endif %}>
+                        編集可能
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>複数レコード入力設定</label>
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" name="is_visible" value="Y"
+                               {% if not field or field.get('is_visible') == 'Y' %}checked{% endif %}>
+                        画面に表示
+                    </label>
+                    <label>
+                        <input type="checkbox" name="is_key_field" value="Y"
+                               {% if field and field.get('is_key_field') == 'Y' %}checked{% endif %}>
+                        キー項目（選択時にデータ取得）
+                    </label>
+                </div>
+                <div class="help-text">
+                    非表示項目は内部データとして保持されます。キー項目はプルダウン選択時に関連データを自動取得します。
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>削除 (delete)</label>
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" name="is_required_delete" value="Y"
+                               {% if field and field.get('is_required_delete') == 'Y' %}checked{% endif %}>
+                        必須入力
+                    </label>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="form-section">
+            <h3>プルダウン設定</h3>
+
+            <div class="form-group">
+                <label for="pulldown_group_id">プルダウングループ</label>
+                <select id="pulldown_group_id" name="pulldown_group_id">
+                    <option value="">-- 選択なし --</option>
+                    {% for group in pulldown_groups %}
+                    <option value="{{ group['pulldown_group_id'] }}"
+                            {% if field and field.get('pulldown_group_id') == group['pulldown_group_id'] %}selected{% endif %}>
+                        {{ group['group_name'] }} ({{ group['group_code'] }})
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="help-text">field_type が select または datalist の場合に使用</div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>リソース連携</h3>
+
+            <div class="form-group">
+                <label for="resource_column_name">Value用リソースカラム名</label>
+                <input type="text" id="resource_column_name" name="resource_column_name"
+                       value="{{ field['resource_column_name'] if field and field['resource_column_name'] is not none else '' }}">
+                <div class="help-text">修正・削除時にリソースから取得する際のカラム名（処理用の値。例: user_id）</div>
+            </div>
+
+            <div class="form-group">
+                <label for="resource_label_column">Label用リソースカラム名</label>
+                <input type="text" id="resource_label_column" name="resource_label_column"
+                       value="{{ field['resource_label_column'] if field and field['resource_label_column'] is not none else '' }}">
+                <div class="help-text">
+                    表示用のカラム名（例: user_name）。未指定の場合はValue用カラムと同じ値を使用。<br>
+                    ・Value: 処理用の値（自動処理、バリデーションで使用）<br>
+                    ・Label: 表示用の値（申請詳細画面、承認画面で表示）
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>バリデーションルール</h3>
+
+            <div class="validation-rules">
+                {% if validation_rules %}
+                    {% for rule in validation_rules %}
+                    <div class="validation-rule-item">
+                        <input type="checkbox" name="validation_rule_ids" value="{{ rule['validation_rule_id'] }}"
+                               id="rule_{{ rule['validation_rule_id'] }}"
+                               {% if assigned_validations %}
+                                   {% for av in assigned_validations %}
+                                       {% if av['validation_rule_id'] == rule['validation_rule_id'] %}checked{% endif %}
+                                   {% endfor %}
+                               {% endif %}>
+                        <label for="rule_{{ rule['validation_rule_id'] }}" class="validation-rule-info">
+                            <span class="rule-code">{{ rule['rule_code'] }}</span>
+                            {{ rule['rule_name'] }} - {{ rule['error_message'] }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p>バリデーションルールがありません</p>
+                {% endif %}
+            </div>
+            <div class="help-text">チェックした順序で実行されます</div>
+        </div>
+
+        <div class="form-section">
+            <h3>表示設定</h3>
+
+            <div class="form-group">
+                <label for="default_value">デフォルト値</label>
+                <input type="text" id="default_value" name="default_value"
+                       value="{{ field['default_value'] if field and field['default_value'] else '' }}">
+            </div>
+
+            <div class="form-group">
+                <label for="placeholder">プレースホルダ</label>
+                <input type="text" id="placeholder" name="placeholder"
+                       value="{{ field['placeholder'] if field and field['placeholder'] else '' }}">
+                <div class="help-text">例: 例：U12345</div>
+            </div>
+
+            <div class="form-group">
+                <label for="help_text">ヘルプテキスト</label>
+                <textarea id="help_text" name="help_text">{{ field['help_text'] if field and field['help_text'] else '' }}</textarea>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ url_for('admin.application_type_fields', application_type_id=application_type['application_type_id']) }}"
+               class="btn btn-secondary">キャンセル</a>
+            <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

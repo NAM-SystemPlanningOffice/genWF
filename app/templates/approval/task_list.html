@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block title %}承認待ちタスク一覧 - ワークフロー申請システム{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    .page-header h2 {
+        margin: 0;
+        color: #2c3e50;
+    }
+    .no-tasks {
+        background-color: white;
+        padding: 3rem;
+        text-align: center;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .no-tasks p {
+        color: #666;
+        font-size: 1.1rem;
+    }
+    .nav-links {
+        margin-bottom: 1rem;
+    }
+    .nav-links a {
+        margin-right: 1rem;
+        color: #3498db;
+        text-decoration: none;
+    }
+    .nav-links a:hover {
+        text-decoration: underline;
+    }
+</style>
+
+<div class="nav-links">
+    <a href="{{ url_for('application.index') }}">← 申請種類選択に戻る</a>
+</div>
+
+<div class="page-header">
+    <h2>承認待ちタスク一覧</h2>
+</div>
+
+{% if tasks %}
+<div class="task-list">
+    <p>承認待ちタスク: {{ tasks|length }}件</p>
+
+    <div class="tasks-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>申請ID</th>
+                    <th>申請種類</th>
+                    <th>申請タイトル</th>
+                    <th>区分</th>
+                    <th>申請者</th>
+                    <th>申請日時</th>
+                    <th>承認ステップ</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in tasks %}
+                <tr>
+                    <td>{{ task['application_id'] }}</td>
+                    <td>{{ task['application_type_name'] }}</td>
+                    <td>{{ task['application_title'] }}</td>
+                    <td>
+                        <span class="action-badge">
+                            {% if task['action_type'] == 'create' %}新規
+                            {% elif task['action_type'] == 'modify' %}修正
+                            {% elif task['action_type'] == 'delete' %}削除
+                            {% else %}{{ task['action_type'] }}{% endif %}
+                        </span>
+                    </td>
+                    <td>{{ task['applicant_user_id'] }}</td>
+                    <td>{{ task['submitted_at'].strftime('%Y-%m-%d %H:%M') if task['submitted_at'] else '-' }}</td>
+                    <td>{{ task['node_name'] }}</td>
+                    <td>
+                        <a href="{{ url_for('approval.approve_task', node_instance_id=task['node_instance_id']) }}"
+                           class="btn btn-primary">承認処理</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .tasks-table {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow: hidden;
+        margin-top: 1rem;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    thead {
+        background-color: #f8f9fa;
+    }
+    th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: bold;
+        color: #2c3e50;
+        border-bottom: 2px solid #e0e0e0;
+    }
+    td {
+        padding: 1rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    .action-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        background-color: #ecf0f1;
+        color: #2c3e50;
+    }
+    .btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 0.875rem;
+    }
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+    }
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+</style>
+{% else %}
+<div class="no-tasks">
+    <p>承認待ちのタスクはありません。</p>
+</div>
+{% endif %}
+{% endblock %}

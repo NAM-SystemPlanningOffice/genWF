@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}管理画面{% endblock %}
+
+{% block content %}
+<style>
+    .admin-menu {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+    .menu-card {
+        background-color: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        text-decoration: none;
+        color: #2c3e50;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .menu-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .menu-card h3 {
+        margin-top: 0;
+        color: #3498db;
+    }
+    .menu-card p {
+        color: #666;
+        margin-bottom: 0;
+    }
+</style>
+
+<h2>管理画面</h2>
+
+<div class="admin-menu">
+    <a href="{{ url_for('admin.application_type_list') }}" class="menu-card">
+        <h3>申請タイプ管理</h3>
+        <p>申請タイプの作成・編集・削除</p>
+    </a>
+
+    <a href="{{ url_for('admin.workflow_list') }}" class="menu-card">
+        <h3>ワークフロー定義管理</h3>
+        <p>ワークフロー定義とノード定義の管理</p>
+    </a>
+
+    <a href="{{ url_for('admin.validation_rule_list') }}" class="menu-card">
+        <h3>バリデーションルール管理</h3>
+        <p>バリデーションルールの管理</p>
+    </a>
+
+    <a href="{{ url_for('admin.pulldown_group_list') }}" class="menu-card">
+        <h3>プルダウングループ管理</h3>
+        <p>プルダウン選択肢の管理</p>
+    </a>
+</div>
+{% endblock %}
