@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}管理者ユーザー一覧{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    .page-header h2 {
+        margin: 0;
+    }
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+    .btn-back {
+        background-color: #95a5a6;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        text-decoration: none;
+        margin-bottom: 1rem;
+        display: inline-block;
+    }
+    .btn-back:hover {
+        background-color: #7f8c8d;
+    }
+    .users-table {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    thead {
+        background-color: #f8f9fa;
+    }
+    th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: bold;
+        color: #2c3e50;
+        border-bottom: 2px solid #e0e0e0;
+    }
+    td {
+        padding: 1rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+    }
+    .badge-active {
+        background-color: #27ae60;
+        color: white;
+    }
+    .badge-inactive {
+        background-color: #95a5a6;
+        color: white;
+    }
+    .btn-small {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        margin: 0 0.25rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        text-decoration: none;
+        color: white;
+    }
+    .btn-edit {
+        background-color: #3498db;
+    }
+    .btn-edit:hover {
+        background-color: #2980b9;
+    }
+    .btn-delete {
+        background-color: #e74c3c;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-delete:hover {
+        background-color: #c0392b;
+    }
+    .no-data {
+        padding: 3rem;
+        text-align: center;
+        color: #666;
+    }
+</style>
+
+<a href="{{ url_for('admin.index') }}" class="btn-back">← 管理画面に戻る</a>
+
+<div class="page-header">
+    <h2>管理者ユーザー一覧</h2>
+    <a href="{{ url_for('admin.admin_user_new') }}" class="btn-primary">新規作成</a>
+</div>
+
+<div class="users-table">
+    {% if admin_users %}
+    <table>
+        <thead>
+            <tr>
+                <th>ユーザーID</th>
+                <th>ユーザー名</th>
+                <th>ステータス</th>
+                <th>作成日時</th>
+                <th>更新日時</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in admin_users %}
+            <tr>
+                <td>{{ user.user_id }}</td>
+                <td>{{ user.user_name or '-' }}</td>
+                <td>
+                    {% if user.is_active == 'Y' %}
+                    <span class="badge badge-active">有効</span>
+                    {% else %}
+                    <span class="badge badge-inactive">無効</span>
+                    {% endif %}
+                </td>
+                <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else '-' }}</td>
+                <td>{{ user.updated_at.strftime('%Y-%m-%d %H:%M') if user.updated_at else '-' }}</td>
+                <td>
+                    <a href="{{ url_for('admin.admin_user_edit', user_id=user.user_id) }}" class="btn-small btn-edit">編集</a>
+                    {% if user.is_active == 'Y' %}
+                    <form method="POST" action="{{ url_for('admin.admin_user_delete', user_id=user.user_id) }}" style="display: inline;" onsubmit="return confirm('本当に削除しますか？');">
+                        <button type="submit" class="btn-small btn-delete">削除</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="no-data">
+        管理者ユーザーが登録されていません
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

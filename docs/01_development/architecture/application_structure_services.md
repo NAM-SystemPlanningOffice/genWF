@@ -351,8 +351,8 @@ class WorkflowService:
             # 特定所属
             return User.get_approvers_by_shozoku(node_def['specific_shozoku'])
         
-        elif node_type == 'final':
-            # 最終承認者（ノード承認者マスタから取得）
+        elif node_type == 'specific_node':
+            # 特定ノード（ノード承認者マスタから取得）
             from app.models.master import NodeApprover
             return NodeApprover.get_by_node_definition(node_def['node_definition_id'])
         

@@ -276,8 +276,8 @@ def get_approvers_for_node(node_def, application):
         shozoku = node_def.specific_shozoku
         return get_approvers_by_shozoku(shozoku)
     
-    elif node_def.node_type == 'final':
-        # 最終承認者（ノード承認者マスタから取得）
+    elif node_def.node_type == 'specific_node':
+        # 特定ノード（ノード承認者マスタから取得）
         return get_node_approvers_from_master(node_def.node_definition_id)
     
     else:
@@ -288,7 +288,7 @@ def get_approvers_by_shozoku(shozoku):
     """所属コードから承認者一覧を取得"""
     sql = """
         SELECT approver_user_id AS user_id, approver_name AS user_name
-        FROM nam_ope.e_approver
+        FROM nam_user_admin.e_approver
         WHERE shozoku = :shozoku
         ORDER BY approver_order
     """

@@ -2,6 +2,8 @@
 
 このプロジェクトはPython 3.13を使用します。
 
+> **技術仕様**: Python 3.13を使用する理由や詳細は [../../reference/TECH_SPECS.md](../../reference/TECH_SPECS.md) を参照してください。
+
 ## Windows でのインストール方法
 
 ### 方法1: 公式サイトからインストール（推奨）
@@ -85,7 +87,6 @@ py --list
 ```
  -V:3.13          Python 3.13.0
  -V:3.12          Python 3.12.0
- -V:3.11          Python 3.11.0
 ```
 
 #### 特定バージョンの実行
@@ -200,7 +201,7 @@ venv\Scripts\activate
 
 ## よくある質問
 
-### Q1: Python 3.12 や 3.11 でも動作しますか？
+### Q1: Python 3.12 以前のバージョンでも動作しますか？
 
 A: python-oracledb は Python 3.8以上で動作しますが、このプロジェクトは**Python 3.13を推奨**しています。
 

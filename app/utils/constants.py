@@ -36,7 +36,6 @@ NODE_TYPE_SPECIFIC_NODE = 'specific_node'             # 特定ノード（承認
 NODE_TYPE_SPECIFIC_DEPT = 'specific_dept'             # 特定部署承認（e_approverから承認者を取得）
 NODE_TYPE_RESOURCE_DEPT = 'resource_dept'             # リソース所管承認（resource_idとshozokuから承認者を取得）
 NODE_TYPE_MULTIPLE_DEPT = 'multiple_dept'             # 複数所属長承認（複数レコード申請で変更される所属の所属長）
-NODE_TYPE_FINAL = 'final'                             # 最終承認
 NODE_TYPE_REPORT = 'report'                           # 報告
 
 # アクション種別

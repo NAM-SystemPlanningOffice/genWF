@@ -109,7 +109,7 @@ http://localhost:5000
 2. `.env` で `USE_THICK_MODE=True` に設定
 3. `app/utils/db.py` でパスを指定
 
-詳細: [docs/python_oracledb_guide.md](python_oracledb_guide.md)
+**python-oracledb (Thin mode)** を使用します。Oracle Instant Clientのインストールは不要です。
 
 ---
 

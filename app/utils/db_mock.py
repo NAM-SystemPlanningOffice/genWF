@@ -146,8 +146,8 @@ class MockCursor:
             self._results = [
                 (1, 1, 1, '申請者所属長承認', 'applicant_dept',
                  None, 'Y', None, 'N', 'Y'),
-                (2, 1, 2, 'システム企画室承認', 'final',
-                 '1234000', 'Y', None, 'N', 'Y')
+                (2, 1, 2, 'システム企画室承認', 'specific_node',
+                 'system_planning', 'Y', None, 'N', 'Y')
             ]
 
         # 申請一覧

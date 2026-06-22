@@ -125,7 +125,6 @@
                 <option value="specific_node" {% if node and node.get('node_type') == 'specific_node' %}selected{% endif %}>特定ノード (specific_node)</option>
                 <option value="specific_dept" {% if node and node.get('node_type') == 'specific_dept' %}selected{% endif %}>特定所属 (specific_dept)</option>
                 <option value="multiple_dept" {% if node and node.get('node_type') == 'multiple_dept' %}selected{% endif %}>複数所属 (multiple_dept)</option>
-                <option value="final" {% if node and node.get('node_type') == 'final' %}selected{% endif %}>最終承認 (final)</option>
                 <option value="report" {% if node and node.get('node_type') == 'report' %}selected{% endif %}>報告 (report)</option>
             </select>
             <div class="help-text">
@@ -134,7 +133,6 @@
                 ・specific_node: 特定の承認ノード（システム企画室、経営企画部等）<br>
                 ・specific_dept: 特定の所属<br>
                 ・multiple_dept: 複数所属の並列承認<br>
-                ・final: 最終承認<br>
                 ・report: 報告
             </div>
         </div>

@@ -328,6 +328,7 @@ def submit_create(application_type_id):
     """新規申請の提出処理"""
     from flask import current_app
     from app.services.validation_service import ValidationService
+    from app.utils.user_log import log_user_action
     try:
         user_id = session.get('user_id')
         applicant_shozoku = session.get('shozoku')
@@ -337,7 +338,7 @@ def submit_create(application_type_id):
             return redirect(url_for('auth.login'))
 
         action = request.form.get('action')  # save_draft or submit
-        current_app.logger.info(f"[submit_create] action={action}, user_id={user_id}, shozoku={applicant_shozoku}")
+        current_app.logger.info(f"[submit_create] START: action={action}, user_id={user_id}, shozoku={applicant_shozoku}, application_type_id={application_type_id}")
 
         # 開発中フラグのチェック（管理者以外が提出する場合）
         if action == 'submit':
@@ -386,6 +387,10 @@ def submit_create(application_type_id):
         if field_values:
             ApplicationDetail.save_details(application_id, field_values)
 
+        # 申請種類コードを取得してログ記録用に保持
+        app_type = ApplicationType.get_by_id(application_type_id)
+        application_type_code = app_type.get('application_type_code') if app_type else None
+
         # バリデーション実行（申請提出時のみ）
         if action == 'submit':
             validation_errors = []
@@ -429,11 +434,19 @@ def submit_create(application_type_id):
                     flash(error, 'danger')
                 return redirect(url_for('application.edit', application_id=application_id))
 
-            # バリデーションが通った場合は承認者選択画面へ
-            return redirect(url_for('application.select_approvers', application_id=application_id))
+            # バリデーションが通った場合は承認者選択画面へ（提出ログはconfirm_approvers内で記録）
+            current_app.logger.info(f"[submit_create] バリデーション成功、承認者選択画面へリダイレクト: application_id={application_id}")
+            redirect_url = url_for('application.select_approvers', application_id=application_id)
+            current_app.logger.info(f"[submit_create] リダイレクトURL: {redirect_url}")
+            return redirect(redirect_url)
         else:
             # 下書き保存のみの場合
+            current_app.logger.info(f"[submit_create] 下書き保存: application_id={application_id}")
+            current_app.logger.info(f"[submit_create] log_user_action呼び出し前")
+            log_result = log_user_action(user_id, 'save_draft', application_id, application_type_code)
+            current_app.logger.info(f"[submit_create] log_user_action呼び出し後: result={log_result}")
             flash(f'下書きとして保存しました（申請ID: {application_id}）', 'success')
+            current_app.logger.info(f"[submit_create] リダイレクト実行")
             return redirect(url_for('application.list'))
 
     except Exception as e:
@@ -573,6 +586,7 @@ def detail(application_id):
 def withdraw(application_id):
     """申請の取り下げ"""
     from flask import current_app
+    from app.utils.user_log import log_user_action
     try:
         user_id = session.get('user_id')
 
@@ -603,6 +617,11 @@ def withdraw(application_id):
         # 申請ステータスを draft（下書き）に戻す
         # これにより修正して再提出、または削除が可能になる
         Application.update_status(application_id, 'draft')
+
+        # ログ記録
+        app_type = ApplicationType.get_by_id(application['application_type_id'])
+        application_type_code = app_type.get('application_type_code') if app_type else None
+        log_user_action(user_id, 'withdraw', application_id, application_type_code)
 
         flash('申請を取り下げて下書き状態に戻しました。修正して再提出、または削除できます。', 'success')
         return redirect(url_for('application.list'))
@@ -872,6 +891,7 @@ def edit(application_id):
 def submit_edit(application_id):
     """下書き申請の更新処理"""
     from flask import current_app
+    from app.utils.user_log import log_user_action
     try:
         user_id = session.get('user_id')
         applicant_shozoku = session.get('shozoku')
@@ -984,11 +1004,17 @@ def submit_edit(application_id):
 
         # ステータス更新
         current_app.logger.info(f'[submit_edit] action={action}, application_id={application_id}')
+
+        # ログ記録用に申請種類コードを取得
+        app_type = ApplicationType.get_by_id(application['application_type_id'])
+        application_type_code = app_type.get('application_type_code') if app_type else None
+
         if action == 'submit':
-            # 承認者選択画面へリダイレクト（select_approvers内でワークフロー開始判定を行う）
+            # 承認者選択画面へリダイレクト（submit/save_draftログはconfirm_approvers内で記録）
             current_app.logger.info(f'[submit_edit] 承認者選択画面へリダイレクト')
             return redirect(url_for('application.select_approvers', application_id=application_id))
         else:
+            log_user_action(user_id, 'save_draft', application_id, application_type_code)
             flash(f'下書きを更新しました（申請ID: {application_id}）', 'success')
             return redirect(url_for('application.list'))
 
@@ -1005,6 +1031,7 @@ def submit_edit(application_id):
 def delete_draft(application_id):
     """下書き申請の削除"""
     from flask import current_app
+    from app.utils.user_log import log_user_action
     try:
         user_id = session.get('user_id')
 
@@ -1023,6 +1050,11 @@ def delete_draft(application_id):
         if application['application_status'] != 'draft':
             flash('下書き状態の申請のみ削除できます', 'danger')
             return redirect(url_for('application.detail', application_id=application_id))
+
+        # ログ記録（削除前に記録）
+        app_type = ApplicationType.get_by_id(application['application_type_id'])
+        application_type_code = app_type.get('application_type_code') if app_type else None
+        log_user_action(user_id, 'delete', application_id, application_type_code)
 
         # 申請を削除（CASCADE で詳細も削除される）
         Application.delete(application_id)
@@ -1043,6 +1075,7 @@ def delete_draft(application_id):
 def recall_node(node_instance_id):
     """承認済みノードの引き戻し"""
     from flask import current_app
+    from app.utils.user_log import log_user_action
     try:
         user_id = session.get('user_id')
 
@@ -1067,6 +1100,30 @@ def recall_node(node_instance_id):
 
         if result:
             application_id = result['application_id']
+
+            # ログ記録（申請情報とノード名を取得）
+            from app.models.application import Application
+            from app.models.application_type import ApplicationType
+            application = Application.get_by_id(application_id)
+            app_type = ApplicationType.get_by_id(application['application_type_id']) if application else None
+            application_type_code = app_type.get('application_type_code') if app_type else None
+
+            # ノード名を取得
+            conn2 = get_db_connection()
+            cursor2 = conn2.cursor()
+            sql_node = """
+                SELECT nd.node_name
+                FROM T_WORKFLOW_NODE_INSTANCE ni
+                INNER JOIN M_WORKFLOW_NODE_DEFINITION nd ON ni.node_definition_id = nd.node_definition_id
+                WHERE ni.node_instance_id = :node_instance_id
+            """
+            cursor2.execute(sql_node, {'node_instance_id': node_instance_id})
+            node_row = cursor2.fetchone()
+            cursor2.close()
+            node_name = node_row[0] if node_row else None
+
+            log_user_action(user_id, 'recall', application_id, application_type_code, node_name)
+
             flash('承認を引き戻しました。再度承認または差し戻しを行ってください。', 'success')
             return redirect(url_for('application.detail', application_id=application_id))
         else:
@@ -1089,6 +1146,7 @@ def recall_node(node_instance_id):
 def select_approvers(application_id):
     """承認者選択画面"""
     from flask import current_app
+    from app.utils.user_log import log_user_action
     try:
         user_id = session.get('user_id')
 
@@ -1150,6 +1208,11 @@ def select_approvers(application_id):
             try:
                 from app.services.workflow_service import WorkflowService
                 workflow_instance_id = WorkflowService.start_workflow(application_id)
+
+                # ログ記録（申請提出）
+                application_type_code = app_type.get('application_type_code') if app_type else None
+                log_user_action(user_id, 'submit', application_id, application_type_code)
+
                 flash(f'申請を提出しました（申請ID: {application_id}）', 'success')
                 return redirect(url_for('application.list'))
             except Exception as e:
@@ -1179,7 +1242,9 @@ def select_approvers(application_id):
 def confirm_approvers():
     """承認者選択確認・ワークフロー開始"""
     from flask import current_app
+    from app.utils.user_log import log_user_action
     try:
+        user_id = session.get('user_id')
         # application_idを取得
         application_id = request.form.get('application_id', type=int)
         if not application_id:
@@ -1193,6 +1258,9 @@ def confirm_approvers():
         # ワークフローを開始
         try:
             from app.services.workflow_service import WorkflowService
+            from app.models.application import Application
+            from app.models.application_type import ApplicationType
+
             workflow_instance_id = WorkflowService.start_workflow(
                 application_id,
                 selected_approvers={
@@ -1200,6 +1268,13 @@ def confirm_approvers():
                     'jurisdiction_dept': jurisdiction_dept_selected
                 }
             )
+
+            # ログ記録（申請提出）
+            application = Application.get_by_id(application_id)
+            app_type = ApplicationType.get_by_id(application['application_type_id']) if application else None
+            application_type_code = app_type.get('application_type_code') if app_type else None
+            log_user_action(user_id, 'submit', application_id, application_type_code)
+
             flash(f'申請を提出しました（申請ID: {application_id}）', 'success')
             return redirect(url_for('application.list'))
         except Exception as e:

@@ -142,6 +142,7 @@ def multi_record(application_type_id, resource_id):
 def submit_multi(application_type_id, resource_id):
     """複数レコード入力の提出処理"""
     from flask import current_app
+    from app.utils.user_log import log_user_action
     try:
         user_id = session.get('user_id')
         applicant_shozoku = session.get('shozoku')
@@ -414,10 +415,12 @@ def submit_multi(application_type_id, resource_id):
                                         application_type_id=application_type_id,
                                         resource_id=resource_id))
 
-            # バリデーションが通った場合は承認者選択画面へ
+            # バリデーションが通った場合は承認者選択画面へ（提出ログはconfirm_approvers内で記録）
             return redirect(url_for('application.select_approvers', application_id=application_id))
         else:
             # 下書き保存のみの場合
+            application_type_code = app_type.get('application_type_code') if app_type else None
+            log_user_action(user_id, 'save_draft', application_id, application_type_code)
             flash(f'下書きとして保存しました（申請ID: {application_id}）', 'success')
             return redirect(url_for('application.list'))
 
@@ -579,6 +582,7 @@ def edit_multi_record(application_id, application_type_id, resource_id):
 def submit_edit_multi(application_id, application_type_id, resource_id):
     """複数レコード申請の編集保存処理"""
     from flask import current_app
+    from app.utils.user_log import log_user_action
     try:
         user_id = session.get('user_id')
         applicant_shozoku = session.get('shozoku')
@@ -610,6 +614,8 @@ def submit_edit_multi(application_id, application_type_id, resource_id):
             return redirect(url_for('application.index'))
 
         action = request.form.get('action')  # save_draft or submit
+        current_app.logger.info(f'[submit_edit_multi] action={action}, application_id={application_id}')
+        current_app.logger.info(f'[submit_edit_multi] フォームパラメータキー: {list(request.form.keys())}')
 
         # 開発中フラグのチェック（管理者以外が提出する場合）
         if action == 'submit':
@@ -850,10 +856,12 @@ def submit_edit_multi(application_id, application_type_id, resource_id):
                                         application_type_id=application_type_id,
                                         resource_id=resource_id))
 
-            # バリデーションが通った場合は承認者選択画面へ
+            # バリデーションが通った場合は承認者選択画面へ（提出ログはconfirm_approvers内で記録）
             return redirect(url_for('application.select_approvers', application_id=application_id))
         else:
             # 下書き保存のみの場合
+            application_type_code = app_type.get('application_type_code') if app_type else None
+            log_user_action(user_id, 'save_draft', application_id, application_type_code)
             flash(f'下書きとして保存しました（申請ID: {application_id}）', 'success')
             return redirect(url_for('application.list'))
 

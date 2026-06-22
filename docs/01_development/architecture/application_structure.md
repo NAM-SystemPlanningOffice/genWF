@@ -2,101 +2,20 @@
 
 ## 1. ディレクトリ構成
 
+> **詳細なディレクトリ構成**: プロジェクト全体の構成は [../../00_infrastructure/reference/DIRECTORY_STRUCTURE.md](../../00_infrastructure/reference/DIRECTORY_STRUCTURE.md) を参照してください。
+
+このドキュメントでは、Routes/Service/Template層の設計に焦点を当てます。
+
+### アプリケーション層の構成
+
 ```
-genWF/
-│
-├── app/                          # アプリケーション本体
-│   ├── __init__.py              # Flaskアプリケーションファクトリ
-│   ├── config.py                # 設定ファイル
-│   │
-│   ├── models/                  # データモデル（DB操作）
-│   │   ├── __init__.py
-│   │   ├── application.py       # 申請関連モデル
-│   │   ├── workflow.py          # ワークフロー関連モデル
-│   │   ├── master.py            # マスタ関連モデル
-│   │   ├── resource.py          # リソーステーブル関連モデル
-│   │   └── user.py              # ユーザー情報モデル
-│   │
-│   ├── services/                # ビジネスロジック
-│   │   ├── __init__.py
-│   │   ├── application_service.py    # 申請処理サービス
-│   │   ├── workflow_service.py       # ワークフロー処理サービス
-│   │   ├── approval_service.py       # 承認処理サービス
-│   │   ├── validation_service.py     # バリデーションサービス
-│   │   ├── resource_service.py       # リソース検索サービス
-│   │   └── notification_service.py   # 通知サービス
-│   │
-│   ├── routes/                  # ルーティング（コントローラー）
-│   │   ├── __init__.py
-│   │   ├── auth.py              # 認証関連
-│   │   ├── application.py       # 申請画面
-│   │   ├── approval.py          # 承認画面
-│   │   ├── admin.py             # 管理画面
-│   │   └── api.py               # API（Ajax用）
-│   │
-│   ├── templates/               # HTMLテンプレート（Jinja2）
-│   │   ├── base.html            # ベーステンプレート
-│   │   ├── layout/              # レイアウト部品
-│   │   │   ├── header.html
-│   │   │   ├── footer.html
-│   │   │   ├── sidebar.html
-│   │   │   └── breadcrumb.html
-│   │   │
-│   │   ├── auth/                # 認証画面
-│   │   │   ├── login.html
-│   │   │   └── logout.html
-│   │   │
-│   │   ├── application/         # 申請画面
-│   │   │   ├── index.html       # 申請種類選択
-│   │   │   ├── create.html      # 新規申請作成
-│   │   │   ├── modify.html      # 修正申請
-│   │   │   ├── delete.html      # 削除申請
-│   │   │   ├── search_resource.html  # リソース検索
-│   │   │   ├── confirm.html     # 申請確認
-│   │   │   ├── list.html        # 申請一覧
-│   │   │   └── detail.html      # 申請詳細
-│   │   │
-│   │   ├── approval/            # 承認画面
-│   │   │   ├── task_list.html   # 承認待ちタスク一覧
-│   │   │   ├── task_detail.html # タスク詳細・承認
-│   │   │   ├── approved_list.html  # 承認済み一覧
-│   │   │   └── history.html     # 承認履歴
-│   │   │
-│   │   ├── admin/               # 管理画面
-│   │   │   ├── dashboard.html   # ダッシュボード
-│   │   │   ├── application_type.html     # 申請種類管理
-│   │   │   ├── field_definition.html     # フィールド定義管理
-│   │   │   ├── workflow_definition.html  # ワークフロー定義管理
-│   │   │   ├── validation_rule.html      # バリデーションルール管理
-│   │   │   ├── pulldown_option.html      # プルダウン選択肢管理
-│   │   │   └── resource_sync.html        # リソース同期管理
-│   │   │
-│   │   ├── components/          # 再利用可能コンポーネント
-│   │   │   ├── form_field.html  # フォームフィールド
-│   │   │   ├── table.html       # テーブル
-│   │   │   ├── pagination.html  # ページネーション
-│   │   │   └── modal.html       # モーダルダイアログ
-│   │   │
-│   │   └── errors/              # エラー画面
-│   │       ├── 400.html
-│   │       ├── 403.html
-│   │       ├── 404.html
-│   │       └── 500.html
-│   │
-│   ├── static/                  # 静的ファイル
-│   │   ├── css/
-│   │   │   ├── style.css        # メインスタイル
-│   │   │   └── admin.css        # 管理画面用スタイル
-│   │   ├── js/
-│   │   │   ├── main.js          # メインJavaScript
-│   │   │   ├── application.js   # 申請画面用JS
-│   │   │   ├── approval.js      # 承認画面用JS
-│   │   │   └── admin.js         # 管理画面用JS
-│   │   └── images/
-│   │
-│   └── utils/                   # ユーティリティ
-│       ├── __init__.py
-│       ├── db.py                # DB接続管理
+app/
+├── models/                  # データモデル（DB操作）
+├── services/                # ビジネスロジック
+├── routes/                  # ルーティング（コントローラー）
+├── templates/               # HTMLテンプレート（Jinja2）
+├── static/                  # 静的ファイル
+└── utils/                   # ユーティリティ
 │       ├── validators.py        # バリデーター
 │       ├── decorators.py        # デコレーター（認証等）
 │       ├── helpers.py           # ヘルパー関数

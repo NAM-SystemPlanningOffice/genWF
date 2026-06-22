@@ -1,9 +1,15 @@
 # Oracleデータベース設計
 
 ## データベース情報
-- **データベース**: TSTCOMDB
-- **スキーマ**: NAM_TASK
+
+- **データベース**: COMDB (全環境共通)
+- **スキーマ**: NAM_TASK (全環境共通)
+- **接続先ホスト**:
+  - 開発/Staging環境: com-dbdv
+  - Production環境: com-db
 - **既存参照スキーマ**: nam_user_admin, nam_ope
+
+環境別の詳細は [../../00_infrastructure/reference/ENVIRONMENTS.md](../../00_infrastructure/reference/ENVIRONMENTS.md) を参照してください。
 
 ## テーブル設計概要
 
@@ -284,7 +290,7 @@
 | workflow_definition_id | NUMBER | FK, NOT NULL | ワークフロー定義ID |
 | node_seq | NUMBER | NOT NULL | ノード順序番号 |
 | node_name | VARCHAR2(200) | NOT NULL | ノード名 |
-| node_type | VARCHAR2(50) | NOT NULL | ノード種別（applicant_dept/target_dept/jurisdiction_dept/specific_dept/final/report） |
+| node_type | VARCHAR2(50) | NOT NULL | ノード種別（applicant_dept/target_dept/jurisdiction_dept/specific_dept/specific_node/report） |
 | specific_shozoku | VARCHAR2(20) | | 特定所属コード（specific_dept時） |
 | is_required | CHAR(1) | NOT NULL | 必須フラグ（Y/N） |
 | skip_condition | VARCHAR2(500) | | スキップ条件（SQL式） |
@@ -299,8 +305,8 @@
 - `jurisdiction_dept`: 申請対象リソースの所管所属長承認
   - スキップ条件例: `applicant_shozoku = jurisdiction_shozoku`（申請者の所属と所管が同じ場合は省略）
 - `specific_dept`: 特定所属の承認（経営企画部長、法務コンプライアンス部長等）
-- `final`: 最終承認（システム企画室、システム開発部長等）
-- `report`: 報告（最終承認後の報告、処理完了を待たない）
+- `specific_node`: 特定ノードの承認（システム企画室、システム開発部長等）
+- `report`: 報告（処理完了を待たない）
 
 #### M_NODE_APPROVER (ノード承認者マスタ)
 ノードごとの承認者候補を定義（特定所属の場合）。
@@ -388,7 +394,7 @@ CREATE SEQUENCE SEQ_SYNC_LOG_ID START WITH 1 INCREMENT BY 1;
 - shozoku: 所属コード（本務）
 - shozoku_fukumu: 兼務所属コード
 
-#### nam_ope.e_approver
+#### nam_user_admin.e_approver
 承認者情報を取得する既存テーブル。
 
 主要カラム（推定）:

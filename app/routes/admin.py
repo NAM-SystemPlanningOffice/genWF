@@ -481,6 +481,7 @@ def validation_rule_edit(validation_rule_id):
 def validation_rule_save():
     """バリデーションルール保存"""
     from app.models.admin.validation_rule import ValidationRule
+    from app.models.admin.audit_log import AuditLog
 
     try:
         validation_rule_id = request.form.get('validation_rule_id')
@@ -498,10 +499,36 @@ def validation_rule_save():
             # 更新
             ValidationRule.update(int(validation_rule_id), data)
             flash('バリデーションルールを更新しました', 'success')
+
+            # 監査ログを記録
+            AuditLog.log(
+                user_id=session.get('user_id'),
+                user_name=session.get('user_name'),
+                operation_type='UPDATE',
+                table_name='M_VALIDATION_RULE',
+                record_id=validation_rule_id,
+                operation_detail={
+                    'rule_name': data['rule_name'],
+                    'rule_code': data['rule_code']
+                }
+            )
         else:
             # 新規作成
-            ValidationRule.create(data)
+            new_id = ValidationRule.create(data)
             flash('バリデーションルールを作成しました', 'success')
+
+            # 監査ログを記録
+            AuditLog.log(
+                user_id=session.get('user_id'),
+                user_name=session.get('user_name'),
+                operation_type='CREATE',
+                table_name='M_VALIDATION_RULE',
+                record_id=new_id,
+                operation_detail={
+                    'rule_name': data['rule_name'],
+                    'rule_code': data['rule_code']
+                }
+            )
 
         return redirect(url_for('admin.validation_rule_list'))
 
@@ -595,6 +622,7 @@ def pulldown_group_edit(pulldown_group_id):
 def pulldown_group_save():
     """プルダウングループ保存"""
     from app.models.admin.pulldown_group import PulldownGroup
+    from app.models.admin.audit_log import AuditLog
 
     try:
         pulldown_group_id = request.form.get('pulldown_group_id')
@@ -610,10 +638,36 @@ def pulldown_group_save():
             # 更新
             PulldownGroup.update(int(pulldown_group_id), data)
             flash('プルダウングループを更新しました', 'success')
+
+            # 監査ログを記録
+            AuditLog.log(
+                user_id=session.get('user_id'),
+                user_name=session.get('user_name'),
+                operation_type='UPDATE',
+                table_name='M_PULLDOWN_GROUP',
+                record_id=pulldown_group_id,
+                operation_detail={
+                    'group_name': data['group_name'],
+                    'group_code': data['group_code']
+                }
+            )
         else:
             # 新規作成
             pulldown_group_id = PulldownGroup.create(data)
             flash('プルダウングループを作成しました', 'success')
+
+            # 監査ログを記録
+            AuditLog.log(
+                user_id=session.get('user_id'),
+                user_name=session.get('user_name'),
+                operation_type='CREATE',
+                table_name='M_PULLDOWN_GROUP',
+                record_id=pulldown_group_id,
+                operation_detail={
+                    'group_name': data['group_name'],
+                    'group_code': data['group_code']
+                }
+            )
 
         # 次のステップへ
         next_step = request.form.get('next_step', 'list')
@@ -689,6 +743,7 @@ def pulldown_group_options(pulldown_group_id):
 def pulldown_option_save():
     """プルダウン選択肢保存"""
     from app.models.admin.pulldown_option import PulldownOption
+    from app.models.admin.audit_log import AuditLog
 
     try:
         option_id = request.form.get('option_id')
@@ -707,10 +762,38 @@ def pulldown_option_save():
             # 更新
             PulldownOption.update(int(option_id), data)
             flash('選択肢を更新しました', 'success')
+
+            # 監査ログを記録
+            AuditLog.log(
+                user_id=session.get('user_id'),
+                user_name=session.get('user_name'),
+                operation_type='UPDATE',
+                table_name='M_PULLDOWN_OPTION',
+                record_id=option_id,
+                operation_detail={
+                    'option_label': data['option_label'],
+                    'option_value': data['option_value'],
+                    'pulldown_group_id': pulldown_group_id
+                }
+            )
         else:
             # 新規作成
-            PulldownOption.create(data)
+            new_id = PulldownOption.create(data)
             flash('選択肢を作成しました', 'success')
+
+            # 監査ログを記録
+            AuditLog.log(
+                user_id=session.get('user_id'),
+                user_name=session.get('user_name'),
+                operation_type='CREATE',
+                table_name='M_PULLDOWN_OPTION',
+                record_id=new_id,
+                operation_detail={
+                    'option_label': data['option_label'],
+                    'option_value': data['option_value'],
+                    'pulldown_group_id': pulldown_group_id
+                }
+            )
 
         return redirect(url_for('admin.pulldown_group_options',
                               pulldown_group_id=pulldown_group_id))
@@ -841,6 +924,7 @@ def workflow_edit(workflow_definition_id):
 def workflow_save():
     """ワークフロー定義保存"""
     from app.models.admin.workflow_definition import WorkflowDefinition
+    from app.models.admin.audit_log import AuditLog
 
     try:
         workflow_definition_id = request.form.get('workflow_definition_id')
@@ -858,10 +942,36 @@ def workflow_save():
             WorkflowDefinition.update(int(workflow_definition_id), data)
             flash('ワークフロー定義を更新しました', 'success')
             workflow_definition_id = int(workflow_definition_id)
+
+            # 監査ログを記録
+            AuditLog.log(
+                user_id=session.get('user_id'),
+                user_name=session.get('user_name'),
+                operation_type='UPDATE',
+                table_name='M_WORKFLOW_DEFINITION',
+                record_id=workflow_definition_id,
+                operation_detail={
+                    'workflow_name': data['workflow_name'],
+                    'workflow_code': data['workflow_code']
+                }
+            )
         else:
             # 新規作成
             workflow_definition_id = WorkflowDefinition.create(data)
             flash('ワークフロー定義を作成しました', 'success')
+
+            # 監査ログを記録
+            AuditLog.log(
+                user_id=session.get('user_id'),
+                user_name=session.get('user_name'),
+                operation_type='CREATE',
+                table_name='M_WORKFLOW_DEFINITION',
+                record_id=workflow_definition_id,
+                operation_detail={
+                    'workflow_name': data['workflow_name'],
+                    'workflow_code': data['workflow_code']
+                }
+            )
 
         # 次の画面へ
         next_step = request.form.get('next_step', 'list')
@@ -883,10 +993,26 @@ def workflow_save():
 def workflow_delete(workflow_definition_id):
     """ワークフロー定義削除"""
     from app.models.admin.workflow_definition import WorkflowDefinition
+    from app.models.admin.audit_log import AuditLog
 
     try:
+        workflow = WorkflowDefinition.get_by_id(workflow_definition_id)
         WorkflowDefinition.delete(workflow_definition_id)
         flash('ワークフロー定義を削除しました', 'success')
+
+        # 監査ログを記録
+        if workflow:
+            AuditLog.log(
+                user_id=session.get('user_id'),
+                user_name=session.get('user_name'),
+                operation_type='DELETE',
+                table_name='M_WORKFLOW_DEFINITION',
+                record_id=workflow_definition_id,
+                operation_detail={
+                    'workflow_name': workflow.get('workflow_name'),
+                    'workflow_code': workflow.get('workflow_code')
+                }
+            )
     except Exception as e:
         flash(f'ワークフロー定義の削除に失敗しました: {str(e)}', 'danger')
 
@@ -953,6 +1079,7 @@ def workflow_node_edit(workflow_definition_id, node_definition_id):
 def workflow_node_save(workflow_definition_id):
     """ワークフローノード定義保存"""
     from app.models.admin.workflow_node_definition import WorkflowNodeDefinition
+    from app.models.admin.audit_log import AuditLog
 
     try:
         node_definition_id = request.form.get('node_definition_id')
@@ -973,10 +1100,38 @@ def workflow_node_save(workflow_definition_id):
             # 更新
             WorkflowNodeDefinition.update(int(node_definition_id), data)
             flash('ノード定義を更新しました', 'success')
+
+            # 監査ログを記録
+            AuditLog.log(
+                user_id=session.get('user_id'),
+                user_name=session.get('user_name'),
+                operation_type='UPDATE',
+                table_name='M_WORKFLOW_NODE_DEFINITION',
+                record_id=node_definition_id,
+                operation_detail={
+                    'workflow_definition_id': workflow_definition_id,
+                    'node_name': data['node_name'],
+                    'node_seq': data['node_seq']
+                }
+            )
         else:
             # 新規作成
-            WorkflowNodeDefinition.create(data)
+            new_id = WorkflowNodeDefinition.create(data)
             flash('ノード定義を作成しました', 'success')
+
+            # 監査ログを記録
+            AuditLog.log(
+                user_id=session.get('user_id'),
+                user_name=session.get('user_name'),
+                operation_type='CREATE',
+                table_name='M_WORKFLOW_NODE_DEFINITION',
+                record_id=new_id,
+                operation_detail={
+                    'workflow_definition_id': workflow_definition_id,
+                    'node_name': data['node_name'],
+                    'node_seq': data['node_seq']
+                }
+            )
 
         return redirect(url_for('admin.workflow_detail',
                               workflow_definition_id=workflow_definition_id))
@@ -994,12 +1149,316 @@ def workflow_node_save(workflow_definition_id):
 def workflow_node_delete(workflow_definition_id, node_definition_id):
     """ワークフローノード定義削除"""
     from app.models.admin.workflow_node_definition import WorkflowNodeDefinition
+    from app.models.admin.audit_log import AuditLog
 
     try:
+        node = WorkflowNodeDefinition.get_by_id(node_definition_id)
         WorkflowNodeDefinition.delete(node_definition_id)
         flash('ノード定義を削除しました', 'success')
+
+        # 監査ログを記録
+        if node:
+            AuditLog.log(
+                user_id=session.get('user_id'),
+                user_name=session.get('user_name'),
+                operation_type='DELETE',
+                table_name='M_WORKFLOW_NODE_DEFINITION',
+                record_id=node_definition_id,
+                operation_detail={
+                    'workflow_definition_id': workflow_definition_id,
+                    'node_name': node.get('node_name'),
+                    'node_seq': node.get('node_seq')
+                }
+            )
     except Exception as e:
         flash(f'ノード定義の削除に失敗しました: {str(e)}', 'danger')
 
     return redirect(url_for('admin.workflow_detail',
                           workflow_definition_id=workflow_definition_id))
+
+
+# ==========================================
+# 管理者ユーザー管理
+# ==========================================
+
+@bp.route('/admin-users')
+@admin_required
+def admin_user_list():
+    """管理者ユーザー一覧"""
+    from app.models.admin_user import AdminUser
+
+    try:
+        admin_users = AdminUser.get_all(include_inactive=True)
+        return render_template('admin/admin_user_list.html', admin_users=admin_users)
+    except Exception as e:
+        flash(f'管理者ユーザーの取得に失敗しました: {str(e)}', 'error')
+        return render_template('admin/admin_user_list.html', admin_users=[])
+
+
+@bp.route('/admin-users/new')
+@admin_required
+def admin_user_new():
+    """管理者ユーザー新規作成"""
+    return render_template('admin/admin_user_edit.html',
+                         admin_user=None,
+                         mode='new')
+
+
+@bp.route('/admin-users/<string:user_id>/edit')
+@admin_required
+def admin_user_edit(user_id):
+    """管理者ユーザー編集"""
+    from app.models.admin_user import AdminUser
+
+    try:
+        admin_user = AdminUser.get_by_id(user_id)
+        if not admin_user:
+            flash('管理者ユーザーが見つかりません', 'error')
+            return redirect(url_for('admin.admin_user_list'))
+
+        return render_template('admin/admin_user_edit.html',
+                             admin_user=admin_user,
+                             mode='edit')
+    except Exception as e:
+        flash(f'管理者ユーザーの取得に失敗しました: {str(e)}', 'error')
+        return redirect(url_for('admin.admin_user_list'))
+
+
+@bp.route('/admin-users/save', methods=['POST'])
+@admin_required
+def admin_user_save():
+    """管理者ユーザー保存"""
+    from app.models.admin_user import AdminUser
+    from app.models.admin.audit_log import AuditLog
+
+    try:
+        original_user_id = request.form.get('original_user_id')
+        user_id = request.form.get('user_id')
+
+        data = {
+            'user_id': user_id,
+            'user_name': request.form.get('user_name'),
+            'is_active': 'Y' if request.form.get('is_active') else 'N'
+        }
+
+        if original_user_id:
+            # 更新
+            AdminUser.update(original_user_id, data)
+            flash('管理者ユーザーを更新しました', 'success')
+
+            # 監査ログを記録
+            AuditLog.log(
+                user_id=session.get('user_id'),
+                user_name=session.get('user_name'),
+                operation_type='UPDATE',
+                table_name='M_ADMIN_USER',
+                record_id=original_user_id,
+                operation_detail={
+                    'user_id': user_id,
+                    'user_name': data['user_name']
+                }
+            )
+        else:
+            # 新規作成
+            AdminUser.create(data)
+            flash('管理者ユーザーを作成しました', 'success')
+
+            # 監査ログを記録
+            AuditLog.log(
+                user_id=session.get('user_id'),
+                user_name=session.get('user_name'),
+                operation_type='CREATE',
+                table_name='M_ADMIN_USER',
+                record_id=user_id,
+                operation_detail={
+                    'user_id': user_id,
+                    'user_name': data['user_name']
+                }
+            )
+
+        return redirect(url_for('admin.admin_user_list'))
+
+    except Exception as e:
+        flash(f'管理者ユーザーの保存に失敗しました: {str(e)}', 'error')
+        return redirect(url_for('admin.admin_user_list'))
+
+
+@bp.route('/admin-users/<string:user_id>/delete', methods=['POST'])
+@admin_required
+def admin_user_delete(user_id):
+    """管理者ユーザー削除（論理削除）"""
+    from app.models.admin_user import AdminUser
+    from app.models.admin.audit_log import AuditLog
+
+    try:
+        admin_user = AdminUser.get_by_id(user_id)
+        if not admin_user:
+            flash('管理者ユーザーが見つかりません', 'error')
+            return redirect(url_for('admin.admin_user_list'))
+
+        # 論理削除（is_active = 'N'）
+        AdminUser.update(user_id, {'is_active': 'N', 'user_name': admin_user.get('user_name')})
+
+        # 監査ログを記録
+        AuditLog.log(
+            user_id=session.get('user_id'),
+            user_name=session.get('user_name'),
+            operation_type='DELETE',
+            table_name='M_ADMIN_USER',
+            record_id=user_id,
+            operation_detail={
+                'user_id': user_id,
+                'user_name': admin_user.get('user_name'),
+                'action': '論理削除'
+            }
+        )
+
+        flash('管理者ユーザーを削除しました', 'success')
+        return redirect(url_for('admin.admin_user_list'))
+
+    except Exception as e:
+        flash(f'管理者ユーザーの削除に失敗しました: {str(e)}', 'error')
+        return redirect(url_for('admin.admin_user_list'))
+
+
+# ==========================================
+# ノード承認者管理
+# ==========================================
+
+@bp.route('/node-approvers')
+@admin_required
+def node_approver_list():
+    """ノード承認者一覧"""
+    from app.models.admin.node_approver import NodeApprover
+
+    try:
+        node_approvers = NodeApprover.get_all(include_inactive=True)
+        return render_template('admin/node_approver_list.html', node_approvers=node_approvers)
+    except Exception as e:
+        flash(f'ノード承認者の取得に失敗しました: {str(e)}', 'error')
+        return render_template('admin/node_approver_list.html', node_approvers=[])
+
+
+@bp.route('/node-approvers/new')
+@admin_required
+def node_approver_new():
+    """ノード承認者新規作成"""
+    return render_template('admin/node_approver_edit.html',
+                         node_approver=None,
+                         mode='new')
+
+
+@bp.route('/node-approvers/<int:node_approver_id>/edit')
+@admin_required
+def node_approver_edit(node_approver_id):
+    """ノード承認者編集"""
+    from app.models.admin.node_approver import NodeApprover
+
+    try:
+        node_approver = NodeApprover.get_by_id(node_approver_id)
+        if not node_approver:
+            flash('ノード承認者が見つかりません', 'error')
+            return redirect(url_for('admin.node_approver_list'))
+
+        return render_template('admin/node_approver_edit.html',
+                             node_approver=node_approver,
+                             mode='edit')
+    except Exception as e:
+        flash(f'ノード承認者の取得に失敗しました: {str(e)}', 'error')
+        return redirect(url_for('admin.node_approver_list'))
+
+
+@bp.route('/node-approvers/save', methods=['POST'])
+@admin_required
+def node_approver_save():
+    """ノード承認者保存"""
+    from app.models.admin.node_approver import NodeApprover
+    from app.models.admin.audit_log import AuditLog
+
+    try:
+        node_approver_id = request.form.get('node_approver_id')
+
+        data = {
+            'specific_node': request.form.get('specific_node'),
+            'approver_user_id': request.form.get('approver_user_id'),
+            'approver_order': request.form.get('approver_order') or None,
+            'is_active': 'Y' if request.form.get('is_active') else 'N'
+        }
+
+        if node_approver_id:
+            # 更新
+            NodeApprover.update(int(node_approver_id), data)
+            flash('ノード承認者を更新しました', 'success')
+
+            # 監査ログを記録
+            AuditLog.log(
+                user_id=session.get('user_id'),
+                user_name=session.get('user_name'),
+                operation_type='UPDATE',
+                table_name='M_NODE_APPROVER',
+                record_id=node_approver_id,
+                operation_detail={
+                    'specific_node': data['specific_node'],
+                    'approver_user_id': data['approver_user_id']
+                }
+            )
+        else:
+            # 新規作成
+            node_approver_id = NodeApprover.create(data)
+            flash('ノード承認者を作成しました', 'success')
+
+            # 監査ログを記録
+            AuditLog.log(
+                user_id=session.get('user_id'),
+                user_name=session.get('user_name'),
+                operation_type='CREATE',
+                table_name='M_NODE_APPROVER',
+                record_id=node_approver_id,
+                operation_detail={
+                    'specific_node': data['specific_node'],
+                    'approver_user_id': data['approver_user_id']
+                }
+            )
+
+        return redirect(url_for('admin.node_approver_list'))
+
+    except Exception as e:
+        flash(f'ノード承認者の保存に失敗しました: {str(e)}', 'error')
+        return redirect(url_for('admin.node_approver_list'))
+
+
+@bp.route('/node-approvers/<int:node_approver_id>/delete', methods=['POST'])
+@admin_required
+def node_approver_delete(node_approver_id):
+    """ノード承認者削除（論理削除）"""
+    from app.models.admin.node_approver import NodeApprover
+    from app.models.admin.audit_log import AuditLog
+
+    try:
+        node_approver = NodeApprover.get_by_id(node_approver_id)
+        if not node_approver:
+            flash('ノード承認者が見つかりません', 'error')
+            return redirect(url_for('admin.node_approver_list'))
+
+        NodeApprover.delete(node_approver_id)
+
+        # 監査ログを記録
+        AuditLog.log(
+            user_id=session.get('user_id'),
+            user_name=session.get('user_name'),
+            operation_type='DELETE',
+            table_name='M_NODE_APPROVER',
+            record_id=node_approver_id,
+            operation_detail={
+                'specific_node': node_approver.get('specific_node'),
+                'approver_user_id': node_approver.get('approver_user_id'),
+                'action': '論理削除'
+            }
+        )
+
+        flash('ノード承認者を削除しました', 'success')
+        return redirect(url_for('admin.node_approver_list'))
+
+    except Exception as e:
+        flash(f'ノード承認者の削除に失敗しました: {str(e)}', 'error')
+        return redirect(url_for('admin.node_approver_list'))

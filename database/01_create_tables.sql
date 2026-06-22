@@ -509,14 +509,14 @@ CREATE TABLE M_WORKFLOW_NODE_DEFINITION (
     approver_selection_required CHAR(1) DEFAULT 'N' NOT NULL,
     CONSTRAINT PK_M_WORKFLOW_NODE_DEF PRIMARY KEY (node_definition_id),
     CONSTRAINT UK_WORKFLOW_NODE UNIQUE (workflow_definition_id, node_seq),
-    CONSTRAINT CHK_NODE_TYPE CHECK (node_type IN ('applicant_dept', 'jurisdiction_dept', 'specific_node', 'specific_dept', 'resource_dept', 'multiple_dept', 'final', 'report', 'auto')),
+    CONSTRAINT CHK_NODE_TYPE CHECK (node_type IN ('applicant_dept', 'jurisdiction_dept', 'specific_node', 'specific_dept', 'resource_dept', 'multiple_dept', 'report', 'auto')),
     CONSTRAINT CHK_NODE_REPORT CHECK (is_report_only IN ('Y', 'N')),
     CONSTRAINT CHK_NODE_APPROVER_SEL CHECK (approver_selection_required IN ('Y', 'N'))
 );
 
 -- コメント
 COMMENT ON TABLE M_WORKFLOW_NODE_DEFINITION IS 'ワークフローノード定義マスタ';
-COMMENT ON COLUMN M_WORKFLOW_NODE_DEFINITION.node_type IS 'ノードタイプ: applicant_dept, jurisdiction_dept, specific_node, specific_dept, resource_dept, multiple_dept, final, report, auto';
+COMMENT ON COLUMN M_WORKFLOW_NODE_DEFINITION.node_type IS 'ノードタイプ: applicant_dept, jurisdiction_dept, specific_node, specific_dept, resource_dept, multiple_dept, report, auto';
 COMMENT ON COLUMN M_WORKFLOW_NODE_DEFINITION.specific_value IS '特定値（node_typeに応じた値: specific_node→識別子, specific_dept→部署コード, resource_dept→テーブル名, auto→process_code）';
 
 
@@ -656,7 +656,88 @@ CREATE INDEX IDX_AUTO_LOG_PROC ON T_AUTO_PROCESS_LOG(auto_process_id);
 
 
 -- ==========================================
--- 7. シーケンス
+-- 7. ユーザー操作ログテーブル
+-- ==========================================
+
+-- ユーザー操作ログ
+CREATE TABLE T_USER_LOG (
+    log_id NUMBER NOT NULL,
+    user_id VARCHAR2(50) NOT NULL,
+    application_id NUMBER,
+    application_type_code VARCHAR2(50),
+    node_name VARCHAR2(200),
+    action_type VARCHAR2(20) NOT NULL,
+    action_timestamp TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
+    CONSTRAINT PK_T_USER_LOG PRIMARY KEY (log_id)
+);
+
+-- インデックス
+CREATE INDEX IDX_USER_LOG_USER ON T_USER_LOG(user_id, action_timestamp);
+CREATE INDEX IDX_USER_LOG_APP ON T_USER_LOG(application_id);
+CREATE INDEX IDX_USER_LOG_TYPE ON T_USER_LOG(application_type_code, action_timestamp);
+
+-- コメント
+COMMENT ON TABLE T_USER_LOG IS 'ユーザー操作ログ';
+COMMENT ON COLUMN T_USER_LOG.log_id IS 'ログID';
+COMMENT ON COLUMN T_USER_LOG.user_id IS '操作ユーザーID';
+COMMENT ON COLUMN T_USER_LOG.application_id IS '申請ID';
+COMMENT ON COLUMN T_USER_LOG.application_type_code IS '申請種類コード';
+COMMENT ON COLUMN T_USER_LOG.node_name IS 'ワークフローノード名';
+COMMENT ON COLUMN T_USER_LOG.action_type IS 'アクション種別（save_draft/submit/withdraw/approve/return/reject/recall）';
+COMMENT ON COLUMN T_USER_LOG.action_timestamp IS 'アクション実行日時';
+
+-- ユーザー操作ログID用シーケンス
+CREATE SEQUENCE SEQ_USER_LOG
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+-- 管理操作監査ログID用シーケンス
+CREATE SEQUENCE SEQ_ADMIN_AUDIT_LOG
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+
+-- ==========================================
+-- 8. 管理画面操作ログテーブル
+-- ==========================================
+
+-- 管理操作監査ログ
+CREATE TABLE T_ADMIN_AUDIT_LOG (
+    audit_log_id NUMBER NOT NULL,
+    user_id VARCHAR2(50) NOT NULL,
+    user_name VARCHAR2(200),
+    operation_type VARCHAR2(20) NOT NULL,
+    table_name VARCHAR2(100),
+    record_id VARCHAR2(100),
+    operation_detail VARCHAR2(4000),
+    operation_timestamp TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
+    CONSTRAINT PK_ADMIN_AUDIT_LOG PRIMARY KEY (audit_log_id),
+    CONSTRAINT CHK_AUDIT_OP_TYPE CHECK (operation_type IN ('CREATE', 'UPDATE', 'DELETE', 'VIEW', 'EXPORT', 'OTHER'))
+);
+
+-- インデックス
+CREATE INDEX IDX_AUDIT_LOG_USER ON T_ADMIN_AUDIT_LOG(user_id, operation_timestamp DESC);
+CREATE INDEX IDX_AUDIT_LOG_TABLE ON T_ADMIN_AUDIT_LOG(table_name, operation_timestamp DESC);
+CREATE INDEX IDX_AUDIT_LOG_TIMESTAMP ON T_ADMIN_AUDIT_LOG(operation_timestamp);
+
+-- コメント
+COMMENT ON TABLE T_ADMIN_AUDIT_LOG IS '管理画面操作ログ';
+COMMENT ON COLUMN T_ADMIN_AUDIT_LOG.audit_log_id IS 'ログID';
+COMMENT ON COLUMN T_ADMIN_AUDIT_LOG.user_id IS '操作者のユーザーID';
+COMMENT ON COLUMN T_ADMIN_AUDIT_LOG.user_name IS '操作者の名前';
+COMMENT ON COLUMN T_ADMIN_AUDIT_LOG.operation_type IS '操作種別（CREATE/UPDATE/DELETE等）';
+COMMENT ON COLUMN T_ADMIN_AUDIT_LOG.table_name IS '対象テーブル名';
+COMMENT ON COLUMN T_ADMIN_AUDIT_LOG.record_id IS '対象レコードID';
+COMMENT ON COLUMN T_ADMIN_AUDIT_LOG.operation_detail IS '操作詳細（JSON形式）';
+COMMENT ON COLUMN T_ADMIN_AUDIT_LOG.operation_timestamp IS '操作日時';
+
+
+-- ==========================================
+-- 9. シーケンス
 -- ==========================================
 
 CREATE SEQUENCE SEQ_DETAIL_ID START WITH 1 INCREMENT BY 1 NOCACHE;

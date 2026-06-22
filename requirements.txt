@@ -24,15 +24,6 @@ gunicorn==21.2.0
 pytest==7.4.3
 pytest-cov==4.1.0
 
-# BOX API（自動処理機能で使用）
-box-sdk-gen==1.5.0
-
-# Google Workspace API（自動処理機能で使用）
-google-api-python-client==2.108.0
-google-auth==2.25.2
-google-auth-oauthlib==1.2.0
-google-auth-httplib2==0.2.0
-
 # 開発用
 black==23.12.1
 flake8==6.1.0

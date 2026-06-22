@@ -14,11 +14,57 @@
         .header {
             background-color: #2c3e50;
             color: white;
-            padding: 1rem 2rem;
+            padding: 0;
+            display: flex;
+            align-items: center;
         }
         .header h1 {
             margin: 0;
             font-size: 1.5rem;
+            padding: 1rem 2rem;
+            white-space: nowrap;
+        }
+        .nav-bar {
+            flex: 1;
+            display: flex;
+            align-items: center;
+        }
+        .nav-bar ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex: 1;
+        }
+        .nav-bar li {
+            margin: 0;
+        }
+        .nav-bar a {
+            display: block;
+            padding: 1rem 1.5rem;
+            color: white;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+        .nav-bar a:hover {
+            background-color: #34495e;
+        }
+        .nav-bar .user-info {
+            margin-left: auto;
+            padding: 1rem 1.5rem;
+            color: #ecf0f1;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+        }
+        .nav-bar .user-info a {
+            color: #ecf0f1;
+            padding: 0;
+            margin-left: 0.5rem;
+        }
+        .nav-bar .user-info a:hover {
+            background-color: transparent;
+            text-decoration: underline;
         }
         .container {
             max-width: 1200px;
@@ -54,55 +100,30 @@
             border: 1px solid #bee5eb;
             color: #0c5460;
         }
-        .nav-bar {
-            background-color: #34495e;
-            padding: 0;
-        }
-        .nav-bar ul {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            display: flex;
-        }
-        .nav-bar li {
-            margin: 0;
-        }
-        .nav-bar a {
-            display: block;
-            padding: 1rem 1.5rem;
-            color: white;
-            text-decoration: none;
-            transition: background-color 0.2s;
-        }
-        .nav-bar a:hover {
-            background-color: #2c3e50;
-        }
-        .nav-bar .user-info {
-            margin-left: auto;
-            padding: 1rem 1.5rem;
-            color: #ecf0f1;
-        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     <header class="header">
         <h1>ワークフロー申請システム</h1>
+        {% if session.user_id %}
+        <nav class="nav-bar">
+            <ul>
+                <li><a href="{{ url_for('application.list') }}">申請一覧</a></li>
+                <li><a href="{{ url_for('approval.task_list') }}">承認要</a></li>
+                <li><a href="{{ url_for('application.index') }}">新規申請</a></li>
+                {% if session.is_admin %}
+                <li><a href="{{ url_for('admin.index') }}">管理画面</a></li>
+                {% endif %}
+                <li class="user-info">
+                    <span>{{ session.user_name }}</span>
+                    <span>|</span>
+                    <a href="{{ url_for('auth.logout') }}">ログアウト</a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
     </header>
-
-    {% if session.user_id %}
-    <nav class="nav-bar">
-        <ul>
-            <li><a href="{{ url_for('application.list') }}">申請一覧</a></li>
-            <li><a href="{{ url_for('approval.task_list') }}">承認要</a></li>
-            <li><a href="{{ url_for('application.index') }}">新規申請</a></li>
-            {% if session.is_admin %}
-            <li><a href="{{ url_for('admin.index') }}">管理画面</a></li>
-            {% endif %}
-            <li class="user-info">{{ session.user_name }} | <a href="{{ url_for('auth.logout') }}" style="color: #ecf0f1;">ログアウト</a></li>
-        </ul>
-    </nav>
-    {% endif %}
 
     <div class="container">
         {% block flash_messages_area %}

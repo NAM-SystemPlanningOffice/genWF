@@ -174,7 +174,6 @@ required|regex:^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
   - [ ] 特定部署承認（`specific_dept`、例: 法務部）
   - [ ] 固定メンバー承認（`specific_node`、例: システム企画室）
   - [ ] リソース所管承認（`resource_dept`、例: Boxフォルダ）
-  - [ ] 最終承認（`final`）
   - [ ] 報告（`report`）
 - [ ] **スキップ条件が必要なノードはあるか？**
   - 条件式（Python式）
@@ -224,11 +223,10 @@ required|regex:^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
 - **特定部署の承認者**（組織マスタで管理）→ `specific_dept`
 - **リソースと申請者所属で承認者が変わる** → `resource_dept`
 
-### 最終承認・報告
+### 報告
 
 | node_type | 用途 | specific_value |
 |-----------|------|----------------|
-| **final** | 最終承認（通常はシステム企画室） | 任意（M_NODE_APPROVERで定義可） |
 | **report** | 報告のみ（承認不要） | 任意 |
 
 ---
@@ -244,7 +242,7 @@ required|regex:^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
 **確認方法:**
 ```sql
 -- applicant_dept / jurisdiction_dept / specific_dept の場合
-SELECT * FROM nam_ope.e_approver WHERE department_cd = '1234567';
+SELECT * FROM nam_user_admin.e_approver WHERE department_cd = '1234567';
 
 -- specific_node の場合
 SELECT * FROM M_NODE_APPROVER WHERE specific_node = 'sys_planning';

@@ -4,12 +4,14 @@
 
 ## 技術スタック
 
+- **アプリケーション**: Python 3.13 + Flask
 - **本番環境**: Azure App Service (Linux) + Gunicorn
 - **開発環境**: Flask開発サーバー（ローカルPC）
-- **アプリケーション**: Python 3.11 + Flask
 - **認証**: Entra ID Easy Auth (本番) / 手動ログイン (開発)
-- **データベース接続**: python-oracledb (Thin mode - Oracle Instant Client不要)
-- **データベース**: Oracle Database (TSTCOMDB スキーマ: NAM_TASK)
+- **データベース**: Oracle Database COMDB (スキーマ: NAM_TASK)
+- **接続ライブラリ**: python-oracledb (Thin mode)
+
+詳細な技術仕様: [docs/00_infrastructure/reference/TECH_SPECS.md](docs/00_infrastructure/reference/TECH_SPECS.md)
 
 ## 主要機能
 
@@ -40,15 +42,13 @@ genWF/
 │   ├── templates/            # HTMLテンプレート
 │   ├── static/               # 静的ファイル
 │   └── utils/                # ユーティリティ
-├── database/                 # DDL・サンプルデータ
 ├── docs/                     # ドキュメント
-├── logs/                     # ログファイル
-├── scripts/                  # バッチスクリプト
 ├── tests/                    # テストコード
-├── .env                      # 環境変数（Gitにコミットしない）
 ├── requirements.txt          # Python依存パッケージ
 └── run.py                    # 開発サーバー起動スクリプト
 ```
+
+詳細なディレクトリ構成: [docs/00_infrastructure/reference/DIRECTORY_STRUCTURE.md](docs/00_infrastructure/reference/DIRECTORY_STRUCTURE.md)
 
 ## セットアップ手順
 
@@ -183,7 +183,7 @@ Get-Content logs/app.log -Wait  # Windows PowerShell
 #### 概要
 
 1. **App Service リソースの作成**
-   - Python 3.11 ランタイム
+   - Python 3.13 ランタイム
    - Staging スロットの作成
 
 2. **環境変数の設定**
@@ -216,36 +216,7 @@ Get-Content logs/app.log -Wait  # Windows PowerShell
 - [アプリケーション構成](docs/application_structure.md)
 
 ### 自動処理機能
-- **[自動処理機能（簡素化版）](docs/AUTO_PROCESS_SIMPLIFIED.md)** - 最新の簡素化設計ガイド
-- **[自動処理設定例（簡素化版）](docs/AUTO_PROCESS_EXAMPLES_SIMPLIFIED.md)** - 実用的な設定例
-- [自動処理設定ガイド（旧版）](docs/AUTO_PROCESS_CONFIGURATION.md) - 旧設計のガイド
-- [自動処理設定例（旧版）](docs/AUTO_PROCESS_EXAMPLES.md) - 旧設計の設定例
-
-## トラブルシューティング
-
-### Oracle接続エラー
-
-```
-DPI-1047: Cannot locate a 64-bit Oracle Client library
-```
-
-→ Oracle Instant Client のパスが正しく設定されていません。環境変数 `PATH` を確認してください。
-
-### インポートエラー
-
-```
-ModuleNotFoundError: No module named 'cx_Oracle'
-```
-
-→ 仮想環境がアクティブになっているか確認し、`pip install -r requirements.txt` を実行してください。
-
-### データベース接続エラー
-
-```
-ORA-12545: Connect failed because target host or object does not exist
-```
-
-→ `.env` ファイルの `ORACLE_DSN` が正しく設定されているか確認してください。
+- **別風呂ジェクト** 
 
 ## ライセンス
 

@@ -135,8 +135,9 @@ def approve_task(node_instance_id):
 @bp.route('/task/<int:node_instance_id>/action', methods=['POST'])
 @login_required
 def action_task(node_instance_id):
-    """承認タスクに対するアクション（承認/却下）"""
+    """承認タスクに対するアクション（承認/却下/差し戻し）"""
     from flask import current_app
+    from app.utils.user_log import log_user_action
 
     try:
         user_id = session.get('user_id')
@@ -155,15 +156,26 @@ def action_task(node_instance_id):
 
         # 承認/却下/差し戻し処理
         from app.services.workflow_service import WorkflowService
+        from app.models.application import Application
+        from app.models.application_type import ApplicationType
+
+        # ログ記録用の情報を取得
+        node_name = task.get('node_name')
+        application = Application.get_by_id(task['application_id'])
+        app_type = ApplicationType.get_by_id(application['application_type_id']) if application else None
+        application_type_code = app_type.get('application_type_code') if app_type else None
 
         if action == 'approve':
             WorkflowService.approve_node(node_instance_id, user_id, comment)
+            log_user_action(user_id, 'approve', task['application_id'], application_type_code, node_name)
             flash('承認しました', 'success')
         elif action == 'return':
             WorkflowService.return_node(node_instance_id, user_id, comment)
+            log_user_action(user_id, 'return', task['application_id'], application_type_code, node_name)
             flash('差し戻しました。申請者が修正して再提出できます。', 'info')
         elif action == 'reject':
             WorkflowService.reject_node(node_instance_id, user_id, comment)
+            log_user_action(user_id, 'reject', task['application_id'], application_type_code, node_name)
             flash('却下しました', 'info')
         else:
             flash('不正なアクションです', 'danger')

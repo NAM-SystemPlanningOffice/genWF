@@ -12,7 +12,6 @@
 | `specific_dept` | 特定部署承認 | 指定した部署の承認者が承認 | 必須（部署コード） | `e_approver` (department_cd一致) |
 | `resource_dept` | リソース所管承認 | リソースIDと申請者所属から承認者を取得 | 必須（テーブル名） | specific_valueで指定したテーブル/View |
 | `multiple_dept` | 複数所属長承認 | 変更される所属の所属長が承認（複数レコード申請用） | 不要 | `T_APPLICATION_DETAIL` (field_code='shozoku') → `e_approver` |
-| `final` | 最終承認 | 最終承認（通常はシステム企画室） | 任意 | `M_NODE_APPROVER` または既定 |
 | `report` | 報告 | 報告のみ（承認不要） | 任意 | `M_NODE_APPROVER` または既定 |
 
 ## 各ノードタイプの詳細
@@ -350,30 +349,7 @@ INSERT INTO M_WORKFLOW_NODE_DEFINITION (
 
 ---
 
-### 7. final（最終承認）
-
-ワークフローの最終承認を行います。通常はシステム企画室長などが対象。
-
-**設定例：**
-```sql
-INSERT INTO M_WORKFLOW_NODE_DEFINITION (
-    node_definition_id, workflow_definition_id, node_seq,
-    node_name, node_type, specific_node,
-    is_required, approver_selection_required
-) VALUES (
-    SEQ_WORKFLOW_NODE_DEF.NEXTVAL, 1, 99,
-    '最終承認（システム企画室）', 'final', 'final_approval',
-    'Y', 'N'
-);
-```
-
-**承認者取得ロジック：**
-- `specific_value`が設定されている場合は`M_NODE_APPROVER`から取得
-- 設定されていない場合はデフォルト承認者（要実装）
-
----
-
-### 8. report（報告）
+### 7. report（報告）
 
 承認ではなく、報告のみを行うノード。
 
@@ -481,5 +457,4 @@ WHERE node_definition_id = 123;
 | `specific_dept` | e_approverから部署で取得 | 部署コード | 特定部署の承認 |
 | `resource_dept` | specific_valueで指定したテーブルから取得 | テーブル名 | リソース所管承認（Box等） |
 | `multiple_dept` | T_APPLICATION_DETAILから動的取得 | 不要 | 複数レコード申請の変更所属承認 |
-| `final` | M_NODE_APPROVERまたは既定 | 任意 | 最終承認 |
 | `report` | M_NODE_APPROVERまたは既定 | 任意 | 報告のみ |

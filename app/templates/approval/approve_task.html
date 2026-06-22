@@ -384,6 +384,16 @@ document.getElementById('approvalForm').addEventListener('submit', function(e) {
     const submitButton = e.submitter;
     const action = submitButton.value;
 
+    // submitterのname/valueをフォームに追加（ボタン無効化する前に実行）
+    // ボタンを無効化すると、そのボタンのname/valueがフォームデータに含まれなくなる
+    if (submitButton && submitButton.name) {
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = submitButton.name;
+        actionInput.value = submitButton.value;
+        this.appendChild(actionInput);
+    }
+
     // 確認メッセージ
     let confirmMessage = '';
     if (action === 'approve') {

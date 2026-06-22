@@ -469,7 +469,7 @@ def get_approvers_for_node(node_definition, application):
         # 特定所属（マスタで定義）
         return get_approvers_by_shozoku(node_definition.specific_shozoku)
     
-    elif node_definition.node_type == 'final':
-        # 最終承認者（マスタで定義）
-        return get_final_approvers()
+    elif node_definition.node_type == 'specific_node':
+        # 特定ノード（マスタで定義）
+        return get_node_approvers(node_definition.specific_value)
 ```

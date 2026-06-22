@@ -55,5 +55,15 @@
         <h3>プルダウングループ管理</h3>
         <p>プルダウン選択肢の管理</p>
     </a>
+
+    <a href="{{ url_for('admin.admin_user_list') }}" class="menu-card">
+        <h3>管理者ユーザー管理</h3>
+        <p>管理者ユーザーの作成・編集・削除</p>
+    </a>
+
+    <a href="{{ url_for('admin.node_approver_list') }}" class="menu-card">
+        <h3>ノード承認者管理</h3>
+        <p>特定ノードの承認者の管理</p>
+    </a>
 </div>
 {% endblock %}

@@ -17,6 +17,7 @@ bp = Blueprint('application_modify', __name__, url_prefix='/application')
 def submit_modify(application_type_id, resource_id):
     """修正申請の提出処理"""
     from flask import current_app
+    from app.utils.user_log import log_user_action
     try:
         user_id = session.get('user_id')
         applicant_shozoku = session.get('shozoku')
@@ -122,6 +123,9 @@ def submit_modify(application_type_id, resource_id):
         if field_values:
             ApplicationDetail.save_details(application_id, field_values)
 
+        # 申請種類コードを取得してログ記録用に保持
+        application_type_code = app_type.get('application_type_code') if app_type else None
+
         # バリデーション実行（申請提出時のみ）
         if action == 'submit':
             validation_errors = []
@@ -159,10 +163,11 @@ def submit_modify(application_type_id, resource_id):
                     flash(error, 'danger')
                 return redirect(url_for('application.edit', application_id=application_id))
 
-            # バリデーションが通った場合は承認者選択画面へ
+            # バリデーションが通った場合は承認者選択画面へ（提出ログはconfirm_approvers内で記録）
             return redirect(url_for('application.select_approvers', application_id=application_id))
         else:
             # 下書き保存のみの場合
+            log_user_action(user_id, 'save_draft', application_id, application_type_code)
             flash(f'下書きとして保存しました（申請ID: {application_id}）', 'success')
             return redirect(url_for('application.list'))
 

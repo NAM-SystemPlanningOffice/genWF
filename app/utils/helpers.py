@@ -87,7 +87,6 @@ def format_node_type(node_type):
         'applicant_dept': '申請者所属',
         'jurisdiction_dept': '所管所属',
         'specific_dept': '特定所属',
-        'final': '最終承認',
         'report': '報告'
     }
     return node_type_map.get(node_type, node_type)

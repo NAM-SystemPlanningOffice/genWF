@@ -120,7 +120,7 @@ app/
 ### ユーザー・リソース関連モデル
 
 #### `models/user.py`
-- **テーブル**: `nam_user_admin.e_imdb2_users`, `nam_ope.e_approver`
+- **テーブル**: `nam_user_admin.e_imdb2_users`, `nam_user_admin.e_approver`
 - **役割**: ユーザー情報と承認者情報を管理
 - **主な機能**:
   - ユーザー情報の取得

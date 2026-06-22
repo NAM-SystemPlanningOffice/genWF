@@ -2,6 +2,9 @@
 
 Azure App Service for Linux上でGenWFワークフローシステムをデプロイする手順です。
 
+> **環境構成**: 環境別の詳細な構成は [../reference/ENVIRONMENTS.md](../reference/ENVIRONMENTS.md) を参照してください。  
+> **技術仕様**: Python/データベース等の詳細は [../reference/TECH_SPECS.md](../reference/TECH_SPECS.md) を参照してください。
+
 ## 前提条件
 
 - Azureサブスクリプション
@@ -31,32 +34,6 @@ Azure App Service for Linux上でGenWFワークフローシステムをデプロ
 
 ## 1. Azure App Serviceリソースの作成
 
-### Azure CLIでの作成
-
-```bash
-# 変数設定
-RESOURCE_GROUP="rg-genWF"
-APP_SERVICE_PLAN="plan-genWF"
-WEB_APP_NAME="genWF-app"
-LOCATION="japaneast"
-
-# リソースグループ作成
-az group create --name $RESOURCE_GROUP --location $LOCATION
-
-# App Service Plan作成（Linux）
-az appservice plan create \
-  --name $APP_SERVICE_PLAN \
-  --resource-group $RESOURCE_GROUP \
-  --sku B1 \
-  --is-linux
-
-# Web App作成（Python 3.11）
-az webapp create \
-  --name $WEB_APP_NAME \
-  --resource-group $RESOURCE_GROUP \
-  --plan $APP_SERVICE_PLAN \
-  --runtime "PYTHON:3.11"
-```
 
 ### Azure Portalでの作成
 
@@ -65,7 +42,7 @@ az webapp create \
    - リソースグループ: 新規作成または既存を選択
    - 名前: `genWF-app`（グローバルに一意）
    - 公開: コード
-   - ランタイムスタック: Python 3.11
+   - ランタイムスタック: Python 3.13（プロジェクト標準バージョン）
    - オペレーティングシステム: Linux
    - 地域: Japan East
    - App Service プラン: B1以上推奨
@@ -106,7 +83,7 @@ Azure Portal: **設定** → **構成** → **アプリケーション設定**
 | 名前 | 値 | スロット設定 |
 |------|-----|------------|
 | `DEPLOYMENT_SLOT` | `production` | ✅ チェック |
-| `ORACLE_DSN` | `prod-oracle-server:1521/PRODDB` | ✅ チェック |
+| `ORACLE_DSN` | `com-db:1521/COMDB` | ✅ チェック |
 | `ORACLE_USER` | `NAM_TASK` | ✅ チェック |
 | `ORACLE_PASSWORD` | `production-password` | ✅ チェック |
 | `LOG_LEVEL` | `WARNING` | ✅ チェック |
@@ -120,8 +97,8 @@ Azure Portal: **デプロイスロット** → **staging** → **設定** → **
 | 名前 | 値 | スロット設定 |
 |------|-----|------------|
 | `DEPLOYMENT_SLOT` | `staging` | ✅ チェック |
-| `ORACLE_DSN` | `staging-oracle-server:1521/STAGINGDB` | ✅ チェック |
-| `ORACLE_USER` | `NAM_TASK_STAGING` | ✅ チェック |
+| `ORACLE_DSN` | `com-dbdv:1521/COMDB` | ✅ チェック |
+| `ORACLE_USER` | `NAM_TASK` | ✅ チェック |
 | `ORACLE_PASSWORD` | `staging-password` | ✅ チェック |
 | `LOG_LEVEL` | `INFO` | ✅ チェック |
 
@@ -145,7 +122,7 @@ az webapp config appsettings set \
   --resource-group $RESOURCE_GROUP \
   --settings \
     DEPLOYMENT_SLOT=production \
-    ORACLE_DSN="prod-oracle-server:1521/PRODDB" \
+    ORACLE_DSN="com-db:1521/COMDB" \
     ORACLE_USER="NAM_TASK" \
     ORACLE_PASSWORD="production-password" \
     LOG_LEVEL="WARNING" \
@@ -158,8 +135,8 @@ az webapp config appsettings set \
   --slot staging \
   --settings \
     DEPLOYMENT_SLOT=staging \
-    ORACLE_DSN="staging-oracle-server:1521/STAGINGDB" \
-    ORACLE_USER="NAM_TASK_STAGING" \
+    ORACLE_DSN="com-dbdv:1521/COMDB" \
+    ORACLE_USER="NAM_TASK" \
     ORACLE_PASSWORD="staging-password" \
     LOG_LEVEL="INFO" \
   --slot-settings DEPLOYMENT_SLOT ORACLE_DSN ORACLE_USER ORACLE_PASSWORD LOG_LEVEL
@@ -242,7 +219,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.13'
 
       - name: Install dependencies
         run: |

@@ -144,7 +144,7 @@ http://localhost:5000
 - より高速（大量データ処理時）
 - `.env` で `USE_THICK_MODE=True` に設定
 
-詳細: [docs/python_oracledb_guide.md](docs/python_oracledb_guide.md)
+**python-oracledb (Thin mode)** を使用します。Oracle Instant Clientのインストールは不要です。
 
 ---
 

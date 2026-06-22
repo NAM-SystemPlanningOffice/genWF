@@ -12,7 +12,7 @@ from app.utils.db import get_db_connection, dict_fetchone, dict_factory
 from app.utils.constants import (
     NODE_TYPE_APPLICANT_DEPT, NODE_TYPE_JURISDICTION_DEPT,
     NODE_TYPE_SPECIFIC_NODE, NODE_TYPE_SPECIFIC_DEPT,
-    NODE_TYPE_RESOURCE_DEPT, NODE_TYPE_MULTIPLE_DEPT, NODE_TYPE_FINAL,
+    NODE_TYPE_RESOURCE_DEPT, NODE_TYPE_MULTIPLE_DEPT,
     NODE_STATUS_PENDING, NODE_STATUS_WAITING
 )
 
@@ -187,7 +187,10 @@ class WorkflowService:
             WorkflowInstance.update_current_node(workflow_instance_id, first_node['node_seq'])
 
         # 申請ステータスを更新
+        from flask import current_app
+        current_app.logger.info(f'[WorkflowService.start_workflow] 申請ステータスを submitted に更新: application_id={application_id}')
         Application.update_status(application_id, 'submitted')
+        current_app.logger.info(f'[WorkflowService.start_workflow] 申請ステータス更新完了: application_id={application_id}')
 
         return workflow_instance_id
 
